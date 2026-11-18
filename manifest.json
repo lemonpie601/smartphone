@@ -3,7 +3,7 @@
   "version": 1,
   "config": {
     "name": "User Phone",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "description": "{{user}}의 스마트폰. 폰 안의 AI 채팅 앱 '앵챗'에서 캐릭터와 대화하다 보면, 그 캐릭터가 점점 폰을 장악해 간다.",
     "runtime": "client",
     "capabilities": ["full_page_access"],

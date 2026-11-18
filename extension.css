@@ -490,6 +490,20 @@
   opacity: 0.7;
 }
 
+/* a blocked roleplay turn: the phone buzzes for attention */
+.uphone-root[data-buzz="true"] .uphone-frame {
+  animation: uphone-buzz 0.12s linear 7;
+}
+@keyframes uphone-buzz {
+  0%,
+  100% {
+    margin-right: 0;
+  }
+  50% {
+    margin-right: 5px;
+  }
+}
+
 /* the reveal: the phone glitches, then goes dark before the page reloads */
 .uphone-root[data-glitch="on"] .uphone-screen {
   animation: uphone-breakdown 0.35s steps(2) infinite !important;
@@ -557,6 +571,47 @@
 }
 .uphone-settings input[type="range"] {
   accent-color: var(--uphone-accent);
+}
+/* the list scrolls; its rows must not be squashed to fit */
+.uphone-settings > * {
+  flex-shrink: 0;
+}
+.uphone-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 2px 8px;
+  font-size: 16px;
+}
+.uphone-group {
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--uphone-surface);
+}
+.uphone-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+}
+.uphone-row + .uphone-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.uphone-row[role="button"] {
+  cursor: pointer;
+  user-select: none;
+}
+.uphone-row-value {
+  color: var(--uphone-muted);
+}
+.uphone-plain {
+  padding: 10px;
+  border: 0;
+  background: none;
+  color: var(--uphone-muted);
+  font: inherit;
+  cursor: pointer;
 }
 .uphone-log-title {
   color: var(--uphone-muted);

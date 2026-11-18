@@ -75,6 +75,11 @@ function stageIndex(infection) {
   return index;
 }
 
+/** The battery drains as the partner takes over the phone. */
+function batteryLevel(stage) {
+  return Math.max(3, 87 - stage * 25);
+}
+
 let saveTimer = null;
 function save() {
   if (saveTimer) marinara.clearTimeout(saveTimer);
@@ -455,7 +460,7 @@ function renderStatus() {
       { class: "uphone-status-right" },
       stage >= 2 ? h("span", { class: "uphone-cam-dot", title: "카메라 사용 중" }) : null,
       "LTE",
-      h("span", { class: "uphone-battery" }, `${Math.max(3, 87 - stage * 25)}%`),
+      h("span", { class: "uphone-battery" }, `${batteryLevel(stage)}%`),
     ),
   );
 }
@@ -633,11 +638,57 @@ function renderMemo() {
   return h("div", { class: "uphone-app-view" }, appHeader("메모"), area);
 }
 
+// The settings app looks like an ordinary phone. Stage and activity controls are break-the-fourth-wall
+// tools, so they hide behind developer options: tap the build number 7 times, like a real phone.
+let buildTaps = 0;
 function renderSettings() {
-  const cs = chatState();
   const view = h("div", { class: "uphone-app-view" }, appHeader("설정"));
   const body = h("div", { class: "uphone-settings" });
   view.append(body);
+  const userName = ctx.persona?.name || "나";
+  const row = (label, value, attrs) => h("div", { class: "uphone-row", ...attrs }, h("span", null, label), h("span", { class: "uphone-row-value" }, value));
+  const stage = stageIndex(chatState().infection);
+
+  body.append(
+    h("div", { class: "uphone-profile" }, h("div", { class: "uphone-avatar" }, userName.charAt(0)), h("strong", null, userName)),
+    h(
+      "div",
+      { class: "uphone-group" },
+      row("Wi-Fi", "연결됨"),
+      row("배터리", `${batteryLevel(stage)}%`),
+      row("저장공간", stage >= 2 ? "알 수 없음" : "64GB 중 41GB 사용"),
+    ),
+    h(
+      "div",
+      { class: "uphone-group" },
+      row("휴대폰 이름", `${userName}의 폰`),
+      row("소프트웨어 버전", "14.2"),
+      row("빌드 번호", "UP1.024.1118", {
+        role: "button",
+        tabindex: "0",
+        onclick: () => {
+          if (data.settings.devMode) return showToast("이미 개발자 모드예요.");
+          buildTaps += 1;
+          if (buildTaps < 7) {
+            if (buildTaps >= 4) showToast(`개발자가 되기까지 ${7 - buildTaps}단계 남았어요.`);
+            return;
+          }
+          buildTaps = 0;
+          data.settings.devMode = true;
+          save();
+          showToast("개발자 모드를 켰어요.");
+          render();
+        },
+      }),
+    ),
+  );
+  if (data.settings.devMode) appendDeveloperOptions(body);
+  return view;
+}
+
+function appendDeveloperOptions(body) {
+  const cs = chatState();
+  body.append(h("div", { class: "uphone-log-title" }, "개발자 옵션"));
 
   if (ctx.characters.length > 0) {
     const select = h("select", { "aria-label": "앵챗 상대" });
@@ -708,8 +759,20 @@ function renderSettings() {
       },
       "이 채팅의 폰 초기화",
     ),
+    h(
+      "button",
+      {
+        class: "uphone-plain",
+        type: "button",
+        onclick: () => {
+          data.settings.devMode = false;
+          save();
+          render();
+        },
+      },
+      "개발자 옵션 끄기",
+    ),
   );
-  return view;
 }
 
 function emptyApp(title, message) {
@@ -723,6 +786,42 @@ const onKey = (event) => {
 };
 window.addEventListener("keydown", onKey);
 
+// Story gate, main-chat side: while the intro is locked, roleplay turns for this chat are refused.
+// It works on Marinara's network request rather than its DOM, so UI changes do not break it.
+// ponytail: matches only POST /api/generate with a JSON body; a new generation route would bypass it.
+const pageFetch = window.fetch;
+const guardedFetch = function (input, init) {
+  try {
+    const method = String(init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
+    const url = new URL(input instanceof Request ? input.url : String(input), window.location.origin);
+    if (method === "POST" && url.pathname === "/api/generate" && typeof init?.body === "string") {
+      const body = JSON.parse(init.body);
+      if (body?.chatId && body.chatId === ctx.chatId && gateLocked()) {
+        onRoleplayBlocked();
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: "📱 폰이 계속 울리고 있어요. 앵챗을 먼저 확인해 주세요." }), {
+            status: 423,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+    }
+  } catch {
+    // Not a request this guard understands: let it through.
+  }
+  return pageFetch.apply(window, arguments);
+};
+window.fetch = guardedFetch;
+
+function onRoleplayBlocked() {
+  if (!ui.open) toggle(true);
+  root.dataset.buzz = "true";
+  marinara.setTimeout(() => {
+    root.dataset.buzz = "";
+  }, 900);
+  showToast("앵챗 알림이 와 있어요. 먼저 확인해 보세요.");
+}
+
 marinara.setInterval(() => {
   renderStatus();
   void refreshContext();
@@ -734,5 +833,6 @@ marinara.log.info("User Phone 0.1.0 loaded");
 
 return () => {
   window.removeEventListener("keydown", onKey);
+  if (window.fetch === guardedFetch) window.fetch = pageFetch;
   root.remove();
 };
