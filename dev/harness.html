@@ -16,6 +16,11 @@
         padding: 24px;
         max-width: 520px;
       }
+      /* Marinara's global scrollbar rule, so the phone's override is tested */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: hotpink transparent;
+      }
       .msg {
         padding: 12px;
         border-radius: 10px;
@@ -29,7 +34,7 @@
     <main>
       <h1>User Phone harness</h1>
       <p>
-        Marinara 없이 폰 화면을 띄워 보는 페이지예요. Marinara API는 가짜로 대신하고, 앵챗 답장도 가짜 문장이에요.
+        Marinara 없이 폰 화면을 띄워 보는 페이지예요. Marinara API는 가짜로 대신하고, 루미 답장도 가짜 문장이에요.
         이 폴더에서 <code>python -m http.server</code>를 실행하고 <code>/dev/harness.html</code>을 열어요.
       </p>
     </main>
@@ -53,7 +58,7 @@
         "/api/characters/personas/p1": { id: "p1", ...persona },
         "/api/connections": [{ id: "conn-1", name: "Test model" }],
       };
-      const replies = ["안녕! 나는 앵챗의 이안이야 :)", "오늘 하루는 어땠어?\n나한테 다 말해줘"];
+      const replies = ["안녕! 나는 루미의 이안이야 :)", "오늘 하루는 어땠어?\n나한테 다 말해줘"];
       window.__requests = [];
       const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
       const memory = loadSession("harness-storage", {});

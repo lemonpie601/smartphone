@@ -6,10 +6,12 @@
   --uphone-surface-2: #262632;
   --uphone-text: #f3f3f7;
   --uphone-muted: #9a9aab;
-  --uphone-accent: #ff7aa8;
-  --uphone-user: #ff7aa8;
-  --uphone-user-text: #1a0c12;
+  --uphone-accent: #b69cff;
+  --uphone-user: #8b6cf6;
+  --uphone-user-text: #fff;
   --uphone-danger: #ff5566;
+  /* the AI chat service's brand: lilac to peach */
+  --uphone-brand: linear-gradient(135deg, #a78bfa, #f0a6ca 55%, #fdba74);
   font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   color: var(--uphone-text);
 }
@@ -18,6 +20,41 @@
 .uphone-root *::before,
 .uphone-root *::after {
   box-sizing: border-box;
+}
+
+/* scrollbars: thin, rounded, only as visible as they need to be.
+   Marinara sets scrollbar-width/color on every element, and Chrome then ignores ::-webkit-scrollbar.
+   Resetting them to auto inside the phone lets the rounded style below apply. */
+.uphone-root * {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+.uphone-root ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.uphone-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.uphone-root ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.uphone-root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(182, 156, 255, 0.6);
+}
+.uphone-root ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.uphone-memo::-webkit-scrollbar-thumb {
+  background: rgba(60, 45, 10, 0.25);
+}
+/* Firefox has no ::-webkit-scrollbar. Chrome would let these override the rounded thumb above, so Firefox only. */
+@supports (-moz-appearance: none) {
+  .uphone-root * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  }
 }
 
 /* launcher */
@@ -219,8 +256,30 @@
   background: var(--uphone-surface-2);
   font-size: 26px;
 }
-.uphone-icon.is-angchat {
-  background: linear-gradient(135deg, #ff7aa8, #a66bff);
+.uphone-icon.is-aichat {
+  background: var(--uphone-brand);
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(80, 30, 120, 0.45);
+}
+.uphone-icon-wrap {
+  position: relative;
+}
+/* the "new" badge Korean apps put on fresh installs */
+.uphone-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 2px solid #1d1830;
+  border-radius: 9px;
+  background: #ff4d5e;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
 }
 .uphone-icon.is-memo {
   background: #f5c84c;
@@ -231,7 +290,7 @@
 
 /* app chrome */
 .uphone-app-view,
-.uphone-angchat {
+.uphone-aichat {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -296,11 +355,40 @@
   object-fit: cover;
 }
 
-/* 앵챗 */
+/* the AI chat app */
 .uphone-chat-title {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  text-align: left;
+}
+.uphone-chat-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.uphone-chat-name small {
+  color: #7ee2a8;
+  font-size: 10px;
+  font-weight: 500;
+}
+.uphone-ai-badge {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--uphone-brand);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  vertical-align: 2px;
+}
+.uphone-brand-mark {
+  background: var(--uphone-brand);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-size: 20px;
+  text-align: center;
 }
 .uphone-messages {
   display: flex;
@@ -407,22 +495,22 @@
 
 /* ── story gate ── */
 
-/* the launcher keeps calling until 앵챗 has been played */
+/* the launcher keeps calling until the AI chat has been played */
 .uphone-root[data-gate="locked"] .uphone-launcher {
   animation: uphone-call 1.6s ease-in-out infinite;
 }
 @keyframes uphone-call {
   0%,
   100% {
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(255, 122, 168, 0.7);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(182, 156, 255, 0.75);
   }
   50% {
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 0 10px rgba(255, 122, 168, 0);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 0 10px rgba(182, 156, 255, 0);
   }
 }
 
 .uphone-notif.is-promo {
-  border: 1px solid rgba(255, 122, 168, 0.45);
+  border: 1px solid rgba(182, 156, 255, 0.45);
 }
 .uphone-icon.is-mini {
   width: 28px;
@@ -436,40 +524,101 @@
   font-size: 34px;
 }
 
-.uphone-onboarding {
+/* sign-up: the welcome screen of a freshly launched service */
+.uphone-welcome {
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 36px 24px 24px;
-  background: linear-gradient(180deg, #2b1726, var(--uphone-bg) 70%);
+  gap: 8px;
+  min-height: 0;
+  padding: 22px 22px 18px;
+  overflow-y: auto;
+  background: radial-gradient(circle at 50% 0%, rgba(167, 139, 250, 0.35), transparent 60%), var(--uphone-bg);
   text-align: center;
 }
-.uphone-onboarding-logo {
+.uphone-welcome > * {
+  flex-shrink: 0;
+}
+.uphone-pill {
+  padding: 4px 10px;
+  border: 1px solid rgba(253, 186, 116, 0.5);
+  border-radius: 999px;
+  color: #fdba74;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.uphone-welcome-logo {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #ff7aa8, #a66bff);
-  font-size: 28px;
+  width: 64px;
+  height: 64px;
+  margin-top: 10px;
+  border-radius: 20px;
+  background: var(--uphone-brand);
+  box-shadow: 0 10px 30px rgba(167, 139, 250, 0.4);
+  color: #fff;
+  font-size: 30px;
 }
-.uphone-onboarding-brand {
-  margin-bottom: 20px;
-  font-size: 18px;
+.uphone-welcome-brand {
+  display: flex;
+  flex-direction: column;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 1px;
 }
-.uphone-onboarding h2 {
-  margin: 8px 0 0;
-  font-size: 19px;
+.uphone-welcome-brand small {
+  color: var(--uphone-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
 }
-.uphone-onboarding p {
+.uphone-welcome-tagline {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.uphone-welcome-promo {
   margin: 0;
   color: var(--uphone-muted);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
+}
+.uphone-pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: var(--uphone-surface);
+  text-align: left;
+}
+.uphone-pick div {
+  display: flex;
+  flex-direction: column;
+}
+.uphone-pick small {
+  color: var(--uphone-muted);
+  font-size: 11px;
+}
+.uphone-features {
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--uphone-muted);
+  font-size: 12px;
+  line-height: 1.9;
+  list-style: none;
+  text-align: left;
+}
+.uphone-features li::before {
+  content: "✓ ";
+  color: #c4b5fd;
 }
 .uphone-cta {
   width: 100%;
@@ -477,17 +626,88 @@
   padding: 13px;
   border: 0;
   border-radius: 14px;
-  background: var(--uphone-accent);
-  color: var(--uphone-user-text);
+  background: var(--uphone-brand);
+  color: #fff;
   font: inherit;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
 }
-.uphone-onboarding small {
+.uphone-cta:disabled {
+  background: var(--uphone-surface-2);
   color: var(--uphone-muted);
-  font-size: 10px;
-  opacity: 0.7;
+  cursor: default;
+}
+
+/* sign-up: terms. The small print is where the app tells the truth. */
+.uphone-terms {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 18px 16px;
+  overflow-y: auto;
+}
+.uphone-terms > * {
+  flex-shrink: 0;
+}
+.uphone-terms h2 {
+  margin: 0 0 14px;
+  font-size: 19px;
+  line-height: 1.35;
+}
+.uphone-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+.uphone-check.is-all {
+  margin-bottom: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--uphone-surface);
+  font-size: 14px;
+}
+.uphone-check input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #a78bfa;
+}
+.uphone-check em {
+  color: #c4b5fd;
+  font-style: normal;
+}
+.uphone-term {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.uphone-term details {
+  margin: -4px 0 8px 28px;
+  color: var(--uphone-muted);
+}
+.uphone-term summary {
+  width: fit-content;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  list-style: none;
+}
+.uphone-term summary::-webkit-details-marker {
+  display: none;
+}
+.uphone-term details p {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+.uphone-terms-footer {
+  flex: none;
+  padding: 10px 16px 6px;
 }
 
 /* a blocked roleplay turn: the phone buzzes for attention */
@@ -557,10 +777,6 @@
   flex-direction: column;
   gap: 6px;
 }
-.uphone-settings label.is-row {
-  flex-direction: row;
-  align-items: center;
-}
 .uphone-settings select {
   padding: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -568,9 +784,6 @@
   background: var(--uphone-surface);
   color: var(--uphone-text);
   font: inherit;
-}
-.uphone-settings input[type="range"] {
-  accent-color: var(--uphone-accent);
 }
 /* the list scrolls; its rows must not be squashed to fit */
 .uphone-settings > * {
@@ -613,16 +826,10 @@
   font: inherit;
   cursor: pointer;
 }
-.uphone-log-title {
+.uphone-section-title {
+  margin-top: 6px;
   color: var(--uphone-muted);
   font-weight: 600;
-}
-.uphone-log {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--uphone-muted);
-  font-size: 12px;
-  line-height: 1.6;
 }
 .uphone-danger {
   padding: 10px;
