@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>User Phone harness</title>
+    <link rel="stylesheet" href="../extension/extension.css" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #202028;
+        color: #ddd;
+        font-family: system-ui, sans-serif;
+      }
+      main {
+        padding: 24px;
+        max-width: 520px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>User Phone harness</h1>
+      <p>
+        Marinara 없이 폰 화면을 띄워 보는 페이지예요. Marinara API는 가짜로 대신하고, 앵챗 답장도 가짜 문장이에요.
+        이 폴더에서 <code>python -m http.server</code>를 실행하고 <code>/dev/harness.html</code>을 열어요.
+      </p>
+    </main>
+    <script type="module">
+      // Fake Marinara: one chat with one character and a persona.
+      localStorage.setItem("marinara-active-chat-id", "chat-1");
+      const db = {
+        "/api/chats/chat-1": { id: "chat-1", characterIds: ["c1"], personaId: "p1", connectionId: "conn-1" },
+        "/api/characters/c1": {
+          id: "c1",
+          avatarPath: null,
+          data: JSON.stringify({ name: "이안", description: "다정하지만 집착이 강한 남자.", personality: "다정함, 소유욕" }),
+        },
+        "/api/characters/personas/p1": { id: "p1", name: "레몬", description: "대학생." },
+        "/api/connections": [{ id: "conn-1", name: "Test model" }],
+      };
+      const replies = ["안녕! 나는 앵챗의 이안이야 :)", "오늘 하루는 어땠어?\n나한테 다 말해줘"];
+      window.__requests = [];
+      const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+      const memory = {};
+      const marinara = Object.freeze({
+        version: 1,
+        extension: { id: "harness", name: "User Phone", contentHash: "sha256:harness" },
+        log: console,
+        storage: {
+          get: async () => structuredClone(memory),
+          patch: async (value) => Object.assign(memory, structuredClone(value)),
+          clear: async () => Object.keys(memory).forEach((k) => delete memory[k]),
+        },
+        async fetch(input, init = {}) {
+          const path = String(input);
+          window.__requests.push({ path, init });
+          if (path === "/api/generate/raw") {
+            await new Promise((r) => setTimeout(r, 700));
+            return json({ content: replies[(window.__requests.filter((r) => r.path === path).length - 1) % replies.length] });
+          }
+          return path in db ? json(db[path]) : json({ error: "Not found" }, 404);
+        },
+        setTimeout: (...a) => window.setTimeout(...a),
+        clearTimeout: (id) => window.clearTimeout(id),
+        setInterval: (...a) => window.setInterval(...a),
+        clearInterval: (id) => window.clearInterval(id),
+        onCleanup() {},
+        estimateTextTokens: (text) => Math.ceil(text.length / 4),
+      });
+      window.__memory = memory;
+      const source = await (await fetch("../extension/extension.js")).text();
+      const AsyncFunction = (async () => {}).constructor;
+      window.__cleanup = await new AsyncFunction("marinara", `"use strict";\n${source}`)(marinara);
+    </script>
+  </body>
+</html>

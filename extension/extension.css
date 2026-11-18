@@ -1,0 +1,569 @@
+/* User Phone (유저폰) — every selector is scoped under .uphone-root so Marinara's own UI is untouched. */
+
+.uphone-root {
+  --uphone-bg: #0d0d12;
+  --uphone-surface: #1a1a22;
+  --uphone-surface-2: #262632;
+  --uphone-text: #f3f3f7;
+  --uphone-muted: #9a9aab;
+  --uphone-accent: #ff7aa8;
+  --uphone-user: #ff7aa8;
+  --uphone-user-text: #1a0c12;
+  --uphone-danger: #ff5566;
+  font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color: var(--uphone-text);
+}
+
+.uphone-root *,
+.uphone-root *::before,
+.uphone-root *::after {
+  box-sizing: border-box;
+}
+
+/* launcher */
+.uphone-launcher {
+  position: fixed;
+  right: 0;
+  top: 45%;
+  z-index: 2147482001;
+  width: 40px;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-right: 0;
+  border-radius: 14px 0 0 14px;
+  background: var(--uphone-surface);
+  color: var(--uphone-text);
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+.uphone-launcher:focus-visible {
+  outline: 2px solid var(--uphone-accent);
+}
+
+/* frame */
+.uphone-frame {
+  position: fixed;
+  right: 56px;
+  top: 50%;
+  z-index: 2147482000;
+  display: flex;
+  flex-direction: column;
+  height: min(760px, calc(100vh - 32px));
+  aspect-ratio: 9 / 19;
+  max-width: calc(100vw - 72px);
+  overflow: hidden;
+  border: 10px solid #050507;
+  border-radius: 46px;
+  background: var(--uphone-bg);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 30px 80px rgba(0, 0, 0, 0.55);
+  transform: translateY(-50%);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.uphone-root[data-open="false"] .uphone-frame {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-46%) scale(0.97);
+}
+
+.uphone-notch {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 92px;
+  height: 24px;
+  border-radius: 14px;
+  background: #050507;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.uphone-status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  padding: 10px 24px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.uphone-status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.uphone-cam-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3ddc84;
+  box-shadow: 0 0 6px #3ddc84;
+}
+
+.uphone-screen {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.uphone-homebar {
+  flex: none;
+  width: 120px;
+  height: 18px;
+  margin: 4px auto 6px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.uphone-homebar::before {
+  content: "";
+  display: block;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.uphone-toast {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 48px;
+  z-index: 4;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(40, 40, 52, 0.96);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.uphone-toast[hidden] {
+  display: none;
+}
+
+/* lock */
+.uphone-lock {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px 16px;
+  background: radial-gradient(circle at 30% 20%, #3b2a4a, transparent 60%), radial-gradient(circle at 80% 80%, #23324a, transparent 55%);
+  cursor: pointer;
+}
+.uphone-lock-time {
+  font-size: 64px;
+  font-weight: 300;
+  letter-spacing: -2px;
+}
+.uphone-lock-date {
+  color: var(--uphone-muted);
+  font-size: 15px;
+}
+.uphone-lock-hint {
+  margin-top: auto;
+  color: var(--uphone-muted);
+  font-size: 13px;
+}
+.uphone-notif {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 36px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+}
+.uphone-notif strong {
+  font-size: 12px;
+}
+.uphone-notif p {
+  display: -webkit-box;
+  margin: 2px 0 0;
+  overflow: hidden;
+  font-size: 14px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* home */
+.uphone-home {
+  flex: 1;
+  padding: 28px 18px;
+  background: linear-gradient(160deg, #2a2140, #121826);
+}
+.uphone-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px 8px;
+}
+.uphone-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  color: var(--uphone-text);
+  font-size: 11px;
+  cursor: pointer;
+}
+.uphone-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  background: var(--uphone-surface-2);
+  font-size: 26px;
+}
+.uphone-icon.is-angchat {
+  background: linear-gradient(135deg, #ff7aa8, #a66bff);
+}
+.uphone-icon.is-memo {
+  background: #f5c84c;
+}
+.uphone-icon.is-settings {
+  background: #6b6b7b;
+}
+
+/* app chrome */
+.uphone-app-view,
+.uphone-angchat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--uphone-bg);
+}
+.uphone-header {
+  display: grid;
+  flex: none;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  height: 48px;
+  padding: 0 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.uphone-header-title {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.uphone-back {
+  border: 0;
+  background: none;
+  color: var(--uphone-accent);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+.uphone-empty {
+  padding: 32px 20px;
+  color: var(--uphone-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.uphone-avatar {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--uphone-surface-2);
+  font-size: 15px;
+  font-weight: 700;
+}
+.uphone-avatar.small {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+.uphone-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 앵챗 */
+.uphone-chat-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.uphone-messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding: 12px;
+  overflow-y: auto;
+}
+.uphone-chat-empty {
+  margin: auto;
+  color: var(--uphone-muted);
+  font-size: 13px;
+}
+.uphone-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.uphone-bubble-row.is-user {
+  flex-direction: row-reverse;
+}
+.uphone-bubble-row time {
+  flex: none;
+  color: var(--uphone-muted);
+  font-size: 10px;
+}
+.uphone-bubble {
+  max-width: 78%;
+  padding: 8px 12px;
+  border-radius: 18px;
+  background: var(--uphone-surface-2);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.is-user .uphone-bubble {
+  background: var(--uphone-user);
+  color: var(--uphone-user-text);
+}
+.uphone-bubble.is-typing {
+  display: flex;
+  gap: 4px;
+  padding: 12px 14px;
+}
+.uphone-bubble.is-typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--uphone-muted);
+  animation: uphone-typing 1s infinite ease-in-out;
+}
+.uphone-bubble.is-typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.uphone-bubble.is-typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes uphone-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+.uphone-composer {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.uphone-input {
+  flex: 1;
+  max-height: 96px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: var(--uphone-surface);
+  color: var(--uphone-text);
+  font: inherit;
+  font-size: 14px;
+  resize: none;
+}
+.uphone-send {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--uphone-accent);
+  color: var(--uphone-user-text);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* memo */
+.uphone-memo {
+  flex: 1;
+  padding: 16px;
+  border: 0;
+  background: #fffbea;
+  color: #2b2410;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: none;
+}
+
+/* settings */
+.uphone-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+.uphone-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.uphone-settings label.is-row {
+  flex-direction: row;
+  align-items: center;
+}
+.uphone-settings select {
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: var(--uphone-surface);
+  color: var(--uphone-text);
+  font: inherit;
+}
+.uphone-settings input[type="range"] {
+  accent-color: var(--uphone-accent);
+}
+.uphone-log-title {
+  color: var(--uphone-muted);
+  font-weight: 600;
+}
+.uphone-log {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--uphone-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.uphone-danger {
+  padding: 10px;
+  border: 1px solid var(--uphone-danger);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--uphone-danger);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ── stages: the phone slowly stops being yours ── */
+
+/* 2단계 · 균열: a rare flicker */
+.uphone-root[data-stage="2"] .uphone-screen {
+  animation: uphone-flicker 9s infinite;
+}
+/* 3단계 · 침투: red tint, chromatic split on text */
+.uphone-root[data-stage="3"] .uphone-screen,
+.uphone-root[data-stage="4"] .uphone-screen {
+  animation: uphone-flicker 4s infinite;
+}
+.uphone-root[data-stage="3"] .uphone-home,
+.uphone-root[data-stage="3"] .uphone-lock {
+  background: radial-gradient(circle at 50% 30%, #4a1426, #0d0d12 70%);
+}
+.uphone-root[data-stage="3"] .uphone-header-title,
+.uphone-root[data-stage="3"] .uphone-lock-time {
+  text-shadow: 1px 0 rgba(255, 0, 60, 0.7), -1px 0 rgba(0, 200, 255, 0.7);
+}
+/* 4단계 · 출현: the whole phone shudders */
+.uphone-root[data-stage="4"] .uphone-home,
+.uphone-root[data-stage="4"] .uphone-lock {
+  background: radial-gradient(circle at 50% 40%, #6a0f22, #050507 75%);
+}
+.uphone-root[data-stage="4"] .uphone-header-title,
+.uphone-root[data-stage="4"] .uphone-lock-time,
+.uphone-root[data-stage="4"] .uphone-bubble {
+  text-shadow: 2px 0 rgba(255, 0, 60, 0.8), -2px 0 rgba(0, 200, 255, 0.8);
+}
+.uphone-root[data-stage="4"][data-open="true"] .uphone-frame {
+  animation: uphone-shudder 6s infinite;
+}
+
+@keyframes uphone-flicker {
+  0%,
+  96%,
+  100% {
+    filter: none;
+  }
+  97% {
+    filter: contrast(1.6) hue-rotate(-30deg);
+    transform: translateX(1px);
+  }
+  98% {
+    filter: invert(0.08);
+    transform: translateX(-2px);
+  }
+}
+@keyframes uphone-shudder {
+  0%,
+  92%,
+  100% {
+    transform: translateY(-50%);
+  }
+  94% {
+    transform: translate(-3px, -50%);
+  }
+  96% {
+    transform: translate(3px, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uphone-root .uphone-screen,
+  .uphone-root .uphone-frame,
+  .uphone-bubble.is-typing i {
+    animation: none !important;
+  }
+}
+
+/* phones: the user phone takes the whole screen */
+@media (max-width: 520px) {
+  .uphone-frame {
+    inset: 0;
+    width: auto;
+    max-width: none;
+    height: 100dvh;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    transform: none;
+  }
+  .uphone-root[data-open="false"] .uphone-frame {
+    transform: translateY(4%);
+  }
+  .uphone-root[data-stage="4"][data-open="true"] .uphone-frame {
+    animation: none;
+  }
+  /* sits in the app header's empty right slot, so it never covers the chat */
+  .uphone-root[data-open="true"] .uphone-launcher {
+    top: 46px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    font-size: 16px;
+  }
+}
