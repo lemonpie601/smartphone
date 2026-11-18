@@ -83,6 +83,61 @@ function doorbellSound() {
   });
 }
 
+/**
+ * The ringback heard while a call connects: 440 + 480 Hz, one second on, two off (the North American and
+ * Korean pattern). Returns a function that stops it.
+ */
+function startRingback() {
+  const ac = audioContext();
+  if (!ac) return () => {};
+  const gain = ac.createGain();
+  gain.gain.value = 0;
+  gain.connect(ac.destination);
+  const tones = [440, 480].map((freq) => {
+    const tone = ac.createOscillator();
+    tone.frequency.value = freq;
+    tone.connect(gain);
+    tone.start();
+    return tone;
+  });
+  const start = ac.currentTime + 0.05;
+  for (let ring = 0; ring < 20; ring++) {
+    const at = start + ring * 3;
+    gain.gain.setValueAtTime(0, at);
+    gain.gain.linearRampToValueAtTime(0.08, at + 0.02);
+    gain.gain.setValueAtTime(0.08, at + 1);
+    gain.gain.linearRampToValueAtTime(0, at + 1.02);
+  }
+  let stopped = false;
+  return () => {
+    if (stopped) return; // an oscillator may only be stopped once
+    stopped = true;
+    gain.gain.cancelScheduledValues(ac.currentTime);
+    gain.gain.setValueAtTime(0, ac.currentTime);
+    for (const tone of tones) tone.stop(ac.currentTime + 0.05);
+  };
+}
+
+/** Three short beeps when a call ends. */
+function hangupSound() {
+  const ac = audioContext();
+  if (!ac) return;
+  for (let i = 0; i < 3; i++) {
+    const at = ac.currentTime + 0.05 + i * 0.25;
+    const tone = ac.createOscillator();
+    tone.frequency.value = 480;
+    const gain = ac.createGain();
+    gain.gain.setValueAtTime(0, at);
+    gain.gain.linearRampToValueAtTime(0.07, at + 0.01);
+    gain.gain.setValueAtTime(0.07, at + 0.14);
+    gain.gain.linearRampToValueAtTime(0, at + 0.15);
+    tone.connect(gain);
+    gain.connect(ac.destination);
+    tone.start(at);
+    tone.stop(at + 0.16);
+  }
+}
+
 /** A soft notification ping. */
 function chime() {
   const ac = audioContext();

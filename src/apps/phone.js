@@ -401,16 +401,20 @@ function callerFor(call) {
 function startCall(contactId) {
   const contact = findContact(contactId);
   if (!contact || ui.call) return;
-  ui.call = { contactId, hidden: false, dir: "out", state: "dialing", lines: [], started: 0 };
+  const call = { contactId, hidden: false, dir: "out", state: "dialing", lines: [], started: 0 };
+  ui.call = call;
   if (!ui.open) toggle(true);
   render();
+  // Two or three rings of ringback before they pick up.
+  call.stopRingback = startRingback();
   marinara.setTimeout(() => {
-    if (ui.call?.state !== "dialing") return;
-    ui.call.state = "active";
-    ui.call.started = Date.now();
+    if (ui.call !== call || call.state !== "dialing") return;
+    call.stopRingback();
+    call.state = "active";
+    call.started = Date.now();
     render();
     void callerSpeaks(`(${userName()} is calling you and you just picked up. Answer the phone.)`);
-  }, 1800);
+  }, 3600 + Math.random() * 3000);
 }
 
 function receiveCall(contactId, hidden = false) {
@@ -460,6 +464,8 @@ function finishCall(outcome) {
   const call = ui.call;
   if (!call) return;
   marinara.clearTimeout(call.ringTimer);
+  call.stopRingback?.();
+  if (call.state !== "ringing") hangupSound(); // hanging up, or giving up while it still rings out
   const cs = chatState();
   const name = call.hidden ? "발신자 정보 없는 번호" : callerName(call);
   const dur = call.state === "active" ? (Date.now() - call.started) / 1000 : 0;
