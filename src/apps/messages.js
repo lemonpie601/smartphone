@@ -46,7 +46,6 @@ function renderThread(kind, contactId) {
     const list = thread();
     list.push({ role: "user", text, t: Date.now() });
     trimList(list, MAX_THREAD);
-    if (contact.ghost) chatState().infection = Math.min(100, chatState().infection + INFECTION_PER_MESSAGE);
     logActivity(`${contact.name}에게 ${josa(m.verb, "을", "를")} 보냈다: "${snippet(text)}"`);
     renderConvo();
     const lines = await askModel({ key, system: promptFor(contact, kind), thread: list, speaker: contact.name });

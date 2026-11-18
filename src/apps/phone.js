@@ -184,7 +184,6 @@ async function sayInCall(text) {
   const call = ui.call;
   if (!call || call.state !== "active") return;
   call.lines.push({ role: "user", text, t: Date.now() });
-  if (call.contactId === "partner") chatState().infection = Math.min(100, chatState().infection + INFECTION_PER_MESSAGE);
   renderConvo();
   await callerSpeaks();
 }
