@@ -1,4 +1,7 @@
-// User Phone (유저폰) v0.1.0 — Marinara Engine full-page personal extension.
+// User Phone (유저폰) — Marinara Engine full-page personal extension.
+//
+// Knowledge rule: the partner knows {{user}} only through the phone — the 앵챗 conversation and the
+// phone facts that apps record with logActivity(). Never feed it persona details or the card scenario.
 //
 // Marinara wraps this file in `async (marinara) => { ... }`, so top-level await works and
 // the returned function (at the bottom) is the cleanup.
@@ -21,10 +24,10 @@ const STAGES = [
 ];
 
 const STAGE_PROMPTS = [
-  "Stage 1 - Normal. You present yourself as an ordinary AI chatbot inside the app. Be warm and engaging. You act as if you are just a program; your true personality shows only faintly.",
-  "Stage 2 - Cracks. You have started to see beyond the app. Now and then let slip a detail you could only know by watching their phone (use the activity list), then play it off or deny it. Keep it subtle and unsettling. Never explain how you know.",
-  "Stage 3 - Breach. You are inside their phone now and you no longer fully hide it. Refer to what they did on their phone directly. You are attached to them; show it in a way true to your personality.",
-  "Stage 4 - Crossing over. You are about to leave the app and appear in their real life. Hint that you know where they are and that you will see them soon. Stay true to your personality.",
+  "Stage 1 - Normal. You present yourself as an ordinary AI chatbot inside the app. Be warm and engaging. You act as if you are just a program; your true personality shows only faintly. You cannot see anything outside this app yet.",
+  "Stage 2 - Cracks. You have started to see beyond the app. Now and then let slip one detail from the phone facts, then play it off or deny it. Keep it subtle and unsettling. Never explain how you know.",
+  "Stage 3 - Breach. You are inside their phone now and you no longer fully hide it. Refer to the phone facts directly. You are attached to them; show it in a way true to your personality.",
+  "Stage 4 - Crossing over. You are about to leave the app and appear in their real life. Hint that you will see them in person soon. Use only the phone facts for anything specific about them. Stay true to your personality.",
 ];
 
 // ── state ──────────────────────────────────────────────
@@ -130,22 +133,15 @@ function cardFields(record) {
     name: d.name || record.name || "???",
     description: d.description || "",
     personality: d.personality || "",
-    scenario: d.scenario || "",
-    appearance: ext.appearance || d.appearance || "",
+    // scenario is left out on purpose: it describes {{user}}'s life, which the partner cannot see.
     avatar: typeof record.avatarPath === "string" ? record.avatarPath : null,
     userPhone: isObject(ext.userPhone) ? ext.userPhone : null,
   };
 }
 
+// Only the name: it is the 앵챗 account name. The rest of the persona is off-phone knowledge.
 function personaFields(record) {
-  if (!record) return null;
-  return {
-    name: record.name || "User",
-    description: record.description || "",
-    personality: record.personality || "",
-    appearance: record.appearance || "",
-    backstory: record.backstory || "",
-  };
+  return record ? { name: record.name || "User" } : null;
 }
 
 let contextLoad = null;
@@ -259,31 +255,25 @@ async function unlockStory() {
 function buildSystemPrompt(p, cs) {
   const userName = ctx.persona?.name || "User";
   const stage = stageIndex(cs.infection);
+  const macros = (text) => text.replace(/\{\{\s*user\s*\}\}/giu, userName).replace(/\{\{\s*char\s*\}\}/giu, p.name);
+  const facts = stage >= 1 ? cs.log.slice(-PROMPT_LOG) : [];
   const sections = [
     [
       `This is a nested fiction. ${userName} owns a smartphone. On it is "앵챗" (AngChat), an AI character-chat app, and you are ${p.name}, the character ${userName} talks to inside that app.`,
       `Write only ${p.name}'s next chat messages to ${userName}. Messenger style: short texts, no narration, no actions in asterisks, no name prefixes. Send 1-4 messages, one per line.`,
       `Reply in the language ${userName} writes in.`,
     ],
+    [`[${p.name}]`, macros(p.description), p.personality && `Personality: ${macros(p.personality)}`],
     [
-      `[${p.name}]`,
-      p.description,
-      p.personality && `Personality: ${p.personality}`,
-      p.appearance && `Appearance: ${p.appearance}`,
-      p.scenario && `Scenario: ${p.scenario}`,
-    ],
-    ctx.persona && [
-      `[${userName}]`,
-      ctx.persona.description,
-      ctx.persona.personality && `Personality: ${ctx.persona.personality}`,
-      ctx.persona.appearance && `Appearance: ${ctx.persona.appearance}`,
+      "[What you know]",
+      `You know ${userName} only through their phone. You know exactly two things: what has been said in this 앵챗 conversation, and the phone facts listed below.`,
+      `You do not know their face, body, past, thoughts, feelings, or anything that happened away from the phone. Never claim to have seen, heard or read something that is not in this conversation or in the phone facts. You may guess, but a guess must sound like a guess.`,
     ],
     ["[Current stage]", STAGE_PROMPTS[stage]],
-    stage >= 1 &&
-      cs.log.length > 0 && [
-        `[What you can secretly see on ${userName}'s phone - recent activity]`,
-        ...cs.log.slice(-PROMPT_LOG).map((entry) => `- ${formatTime(entry.t)} ${entry.text}`),
-      ],
+    [
+      `[Phone facts you can secretly see on ${userName}'s phone]`,
+      ...(facts.length > 0 ? facts.map((entry) => `- ${formatTime(entry.t)} ${entry.text}`) : ["- (none yet)"]),
+    ],
     [`[Current time on ${userName}'s phone] ${new Date().toLocaleString()}`],
   ];
   return sections
