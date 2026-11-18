@@ -212,15 +212,33 @@
 }
 .uphone-notif {
   display: flex;
+  flex-shrink: 0;
   gap: 10px;
   width: 100%;
   padding: 12px;
+  border: 0;
   border-radius: 18px;
+  color: var(--uphone-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(12px);
 }
+.uphone-notif > div {
+  flex: 1;
+  min-width: 0;
+}
 .uphone-notif strong {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 12px;
+}
+.uphone-notif strong time {
+  flex: none;
+  color: var(--uphone-muted);
+  font-weight: 400;
 }
 .uphone-notif p {
   display: -webkit-box;
@@ -237,7 +255,7 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  padding: 28px 18px 10px;
+  padding: 14px 18px 10px;
   background: linear-gradient(160deg, #2a2140, #121826);
 }
 .uphone-dock {
@@ -260,8 +278,13 @@
 }
 .uphone-grid {
   display: grid;
+  flex: 1;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px 8px;
+  align-content: start;
+  gap: 16px 8px;
+  min-height: 0;
+  padding: 4px 0 12px;
+  overflow-y: auto;
 }
 .uphone-app {
   display: flex;
@@ -345,8 +368,9 @@
 .uphone-header {
   display: grid;
   flex: none;
-  grid-template-columns: 36px 1fr 36px;
+  grid-template-columns: minmax(36px, auto) 1fr minmax(36px, auto);
   align-items: center;
+  gap: 4px;
   height: 48px;
   padding: 0 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
@@ -457,10 +481,20 @@
 .uphone-bubble-row.is-user {
   flex-direction: row-reverse;
 }
-.uphone-bubble-row time {
+.uphone-bubble-meta {
+  display: flex;
   flex: none;
+  flex-direction: column;
+  align-items: flex-start;
   color: var(--uphone-muted);
   font-size: 10px;
+  line-height: 1.3;
+}
+.uphone-bubble-row.is-user .uphone-bubble-meta {
+  align-items: flex-end;
+}
+.uphone-bubble-row.is-grouped {
+  margin-bottom: -3px;
 }
 .uphone-bubble {
   max-width: 78%;
@@ -1302,6 +1336,1638 @@ label.uphone-row {
   font-size: 11px;
 }
 
+/* ── v0.6: a busier phone ── */
+
+/* shared bits */
+.uphone-section-label {
+  flex-shrink: 0;
+  padding: 12px 14px 4px;
+  color: var(--uphone-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.uphone-hint {
+  margin: 0;
+  padding: 10px 14px;
+  color: var(--uphone-muted);
+  font-size: 11px;
+  text-align: center;
+}
+.uphone-header-action.is-text {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.uphone-header-action.is-small {
+  padding: 0 4px;
+  font-size: 17px;
+}
+.uphone-header-tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.uphone-secondary.is-small {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.uphone-secondary.is-active {
+  border-color: var(--uphone-accent);
+  color: var(--uphone-accent);
+}
+.uphone-search-wrap {
+  position: relative;
+  flex: none;
+  padding: 8px 12px;
+}
+.uphone-search {
+  width: 100%;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--uphone-surface-2);
+  color: var(--uphone-text);
+  font: inherit;
+  font-size: 14px;
+}
+.uphone-search:focus,
+.uphone-field:focus,
+.uphone-input:focus {
+  outline: 1px solid var(--uphone-accent);
+}
+.uphone-chips {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+}
+.uphone-chip {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: none;
+  color: var(--uphone-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.uphone-chip.is-active {
+  border-color: transparent;
+  background: var(--uphone-accent);
+  color: #1b1230;
+  font-weight: 700;
+}
+.uphone-chip.is-muted {
+  color: var(--uphone-muted);
+}
+.uphone-spinner {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: 0 auto 10px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--uphone-accent);
+  border-radius: 50%;
+  animation: uphone-spin 0.8s linear infinite;
+}
+@keyframes uphone-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.uphone-tabs.is-three {
+  grid-template-columns: repeat(3, 1fr);
+}
+.uphone-tabs.is-four {
+  grid-template-columns: repeat(4, 1fr);
+}
+.uphone-tabs.is-four .uphone-tab {
+  padding: 11px 2px;
+  font-size: 12px;
+}
+
+/* a row with a main tap target and extra buttons */
+.uphone-row-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.uphone-row-time {
+  flex: none;
+  color: var(--uphone-muted);
+  font-size: 11px;
+}
+.uphone-info {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--uphone-accent);
+  font-size: 18px;
+  cursor: pointer;
+}
+.uphone-list-side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.uphone-list-side small {
+  color: var(--uphone-muted);
+  font-size: 11px;
+}
+.uphone-count {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: #ff4d5e;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+.uphone-list-row.is-unread .uphone-list-main small {
+  color: var(--uphone-text);
+}
+.uphone-list-row.is-current strong {
+  color: var(--uphone-accent);
+}
+.uphone-my-profile {
+  padding: 14px;
+}
+.uphone-star {
+  color: #facc15;
+  font-size: 11px;
+}
+
+/* in-phone dialogs */
+.uphone-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  animation: uphone-fade 0.15s ease;
+}
+.uphone-sheet-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-height: 80%;
+  padding: 16px;
+  overflow-y: auto;
+  border-radius: 20px;
+  background: var(--uphone-surface);
+}
+.uphone-sheet-title {
+  font-size: 15px;
+}
+.uphone-sheet-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.uphone-sheet-actions {
+  display: flex;
+  gap: 8px;
+}
+.uphone-sheet-actions > * {
+  flex: 1;
+}
+.uphone-share-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.uphone-share-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.uphone-share-row > span {
+  flex: 1;
+  font-size: 14px;
+}
+@keyframes uphone-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* notification centre */
+.uphone-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: rgba(5, 5, 10, 0.35);
+}
+.uphone-shade[hidden] {
+  display: none;
+}
+.uphone-shade-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 100%;
+  padding: 44px 14px 8px;
+  border-radius: 0 0 28px 28px;
+  background: rgba(22, 20, 32, 0.97);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  transform: translateY(-100%);
+  transition: transform 0.22s ease;
+}
+.uphone-shade.is-open .uphone-shade-panel {
+  transform: none;
+}
+.uphone-shade-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.uphone-shade-top strong {
+  font-size: 26px;
+  font-weight: 400;
+}
+.uphone-shade-top span {
+  flex: 1;
+  color: var(--uphone-muted);
+  font-size: 13px;
+}
+.uphone-shade-top .uphone-plain {
+  padding: 4px;
+}
+.uphone-qs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.uphone-qs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 2px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--uphone-surface-2);
+  color: var(--uphone-text);
+  font: inherit;
+  cursor: pointer;
+}
+.uphone-qs span {
+  font-size: 18px;
+}
+.uphone-qs small {
+  font-size: 10px;
+}
+.uphone-qs.is-on {
+  background: var(--uphone-accent);
+  color: #1b1230;
+}
+.uphone-brightness-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  color: var(--uphone-muted);
+}
+.uphone-brightness {
+  flex: 1;
+  accent-color: var(--uphone-accent);
+}
+.uphone-shade-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.uphone-shade-list .uphone-notif {
+  background: rgba(255, 255, 255, 0.07);
+}
+.uphone-shade-empty {
+  margin: 6px 0;
+  color: var(--uphone-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.uphone-shade-clear {
+  align-self: flex-end;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--uphone-surface-2);
+  color: var(--uphone-text);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.uphone-shade-handle {
+  align-self: center;
+  width: 44px;
+  height: 14px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.uphone-shade-handle::before {
+  content: "";
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.uphone-status {
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+.uphone-dimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* lock screen extras */
+.uphone-lock-weather,
+.uphone-lock-music {
+  margin-top: 6px;
+  color: var(--uphone-muted);
+  font-size: 13px;
+}
+.uphone-lock-music {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.uphone-lock .uphone-notifs {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* home widget and icons */
+.uphone-widget {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  color: var(--uphone-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.uphone-widget-left,
+.uphone-widget-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.uphone-widget-right {
+  align-items: flex-end;
+  text-align: right;
+}
+.uphone-widget strong {
+  font-size: 18px;
+}
+.uphone-widget small {
+  color: var(--uphone-muted);
+  font-size: 11px;
+}
+.uphone-widget-next {
+  margin-top: 8px;
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.uphone-widget-icon {
+  font-size: 22px;
+}
+.uphone-icon.is-browser {
+  background: linear-gradient(160deg, #f8fafc, #cbd5e1);
+}
+.uphone-icon.is-feed {
+  background: linear-gradient(160deg, #fde68a, #fb7185 60%, #a78bfa);
+}
+.uphone-icon.is-maps {
+  background: linear-gradient(160deg, #bbf7d0, #38bdf8);
+}
+.uphone-icon.is-music {
+  background: linear-gradient(160deg, #f472b6, #7c3aed);
+}
+.uphone-icon.is-weather {
+  background: linear-gradient(160deg, #7dd3fc, #2563eb);
+}
+.uphone-icon.is-clock {
+  background: #111118;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.uphone-icon.is-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #fff;
+  color: #111;
+  line-height: 1;
+}
+.uphone-icon.is-calendar small {
+  color: #ef4444;
+  font-size: 9px;
+  font-weight: 700;
+}
+.uphone-icon.is-calendar b {
+  font-size: 24px;
+  font-weight: 500;
+}
+.uphone-icon.is-calendar-mini {
+  background: #fff;
+}
+
+/* conversations: photos, receipts, day separators, attaching */
+.uphone-day-sep {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  margin: 8px 0 4px;
+}
+.uphone-day-sep span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--uphone-muted);
+  font-size: 10px;
+}
+.uphone-bubble-row {
+  flex-shrink: 0;
+}
+.uphone-bubble.is-photo {
+  display: flex;
+  align-items: flex-end;
+  width: 160px;
+  height: 160px;
+  padding: 8px;
+  border-radius: 16px;
+}
+.uphone-bubble.is-photo span {
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.uphone-receipt {
+  color: var(--uphone-muted);
+  font-size: 10px;
+}
+.uphone-receipt.is-unread {
+  color: #facc15;
+}
+.uphone-attach {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  align-self: flex-end;
+  border: 0;
+  border-radius: 50%;
+  background: var(--uphone-surface-2);
+  color: var(--uphone-text);
+  font-size: 18px;
+  cursor: pointer;
+}
+.uphone-convo {
+  position: relative;
+}
+.uphone-picker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  max-height: 65%;
+  border-radius: 20px 20px 0 0;
+  background: var(--uphone-surface);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.45);
+  animation: uphone-rise 0.18s ease;
+}
+.uphone-picker-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 0 16px;
+}
+.uphone-picker .uphone-gallery {
+  overflow-y: auto;
+}
+@keyframes uphone-rise {
+  from {
+    transform: translateY(30%);
+    opacity: 0;
+  }
+}
+.uphone-convo.is-talk .uphone-day-sep span {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* contact and call detail */
+.uphone-detail {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 18px 16px;
+  overflow-y: auto;
+}
+.uphone-detail > * {
+  flex-shrink: 0;
+}
+.uphone-detail .uphone-group,
+.uphone-detail .uphone-danger,
+.uphone-detail .uphone-section-label {
+  align-self: stretch;
+}
+.uphone-detail .uphone-group {
+  margin-top: 6px;
+}
+.uphone-detail .uphone-section-label {
+  padding: 12px 2px 0;
+}
+.uphone-detail .uphone-danger {
+  margin-top: 14px;
+}
+.uphone-detail-name {
+  margin-top: 6px;
+  font-size: 22px;
+}
+.uphone-detail.is-ghost .uphone-detail-name {
+  text-shadow: 1px 0 rgba(255, 0, 60, 0.6), -1px 0 rgba(0, 200, 255, 0.6);
+}
+.uphone-detail-sub {
+  color: var(--uphone-muted);
+  font-size: 13px;
+}
+.uphone-detail-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.uphone-detail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 62px;
+  padding: 10px 0 8px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--uphone-surface);
+  color: var(--uphone-text);
+  font: inherit;
+  cursor: pointer;
+}
+.uphone-detail-btn span {
+  font-size: 18px;
+}
+.uphone-detail-btn small {
+  color: var(--uphone-muted);
+  font-size: 11px;
+}
+.uphone-row.is-note {
+  flex-direction: column;
+  gap: 4px;
+}
+.uphone-row.is-note span {
+  color: var(--uphone-muted);
+  font-size: 12px;
+}
+.uphone-row.is-note p {
+  margin: 0;
+  line-height: 1.5;
+}
+.uphone-row.is-missed span:first-child {
+  color: var(--uphone-danger);
+}
+
+/* keypad */
+.uphone-keypad {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 0;
+  padding: 10px 24px 14px;
+}
+.uphone-dial-number {
+  min-height: 40px;
+  font-size: 28px;
+  letter-spacing: 1px;
+}
+.uphone-dial-match {
+  min-height: 16px;
+  color: var(--uphone-accent);
+  font-size: 13px;
+}
+.uphone-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  gap: 12px 22px;
+}
+.uphone-key {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--uphone-surface-2);
+  color: var(--uphone-text);
+  font: inherit;
+  cursor: pointer;
+}
+.uphone-key:active {
+  background: #3a3a4a;
+}
+.uphone-key b {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+.uphone-key small {
+  min-height: 10px;
+  color: var(--uphone-muted);
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.uphone-keypad-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  gap: 22px;
+  justify-items: center;
+  align-items: center;
+}
+.uphone-keypad-bar .uphone-call-btn {
+  width: 64px;
+  height: 64px;
+}
+.uphone-key-del {
+  font-size: 20px;
+}
+
+/* memo list */
+.uphone-app-view.is-memo .uphone-memo {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+.uphone-note-row .uphone-list-main {
+  gap: 2px;
+}
+
+/* camera */
+.uphone-camera-flip {
+  justify-self: end;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--uphone-surface-2);
+  color: var(--uphone-text);
+  font-size: 20px;
+  cursor: pointer;
+}
+.uphone-cam-mode {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+}
+
+/* weather */
+.uphone-weather {
+  background: linear-gradient(180deg, #3b82f6, #1e3a8a 70%);
+}
+.uphone-weather.is-cloudy,
+.uphone-weather.is-partly {
+  background: linear-gradient(180deg, #64748b, #1e293b 70%);
+}
+.uphone-weather.is-rain,
+.uphone-weather.is-snow {
+  background: linear-gradient(180deg, #475569, #0f172a 70%);
+}
+.uphone-weather.is-night {
+  background: linear-gradient(180deg, #1e1b4b, #020617 70%);
+}
+.uphone-weather .uphone-header {
+  border-bottom-color: transparent;
+}
+.uphone-weather-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 0 14px 14px;
+  overflow-y: auto;
+}
+.uphone-weather-body > * {
+  flex-shrink: 0;
+}
+.uphone-weather-now {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0 10px;
+}
+.uphone-weather-now strong {
+  font-size: 60px;
+  font-weight: 200;
+  line-height: 1.05;
+}
+.uphone-weather-now small,
+.uphone-weather-city {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+}
+.uphone-weather-icon {
+  font-size: 40px;
+}
+.uphone-weather-card {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.uphone-weather-card > small {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+.uphone-weather-hours {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+}
+.uphone-weather-hours span {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.uphone-weather-hours small {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+}
+.uphone-weather-day {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  padding: 5px 0;
+  font-size: 13px;
+}
+.uphone-weather-day small {
+  color: #93c5fd;
+  font-size: 10px;
+}
+.uphone-weather-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.uphone-weather-grid strong {
+  font-size: 18px;
+}
+
+/* calendar */
+.uphone-cal-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+}
+.uphone-cal-head .uphone-plain {
+  font-size: 22px;
+  line-height: 1;
+}
+.uphone-cal-head .uphone-plain:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.uphone-cal-grid {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 0 8px;
+}
+.uphone-cal-grid.is-week span {
+  padding: 4px 0;
+  color: var(--uphone-muted);
+  font-size: 10px;
+  text-align: center;
+}
+.uphone-cal-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  height: 38px;
+  padding-top: 6px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--uphone-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.uphone-cal-cell.is-blank {
+  cursor: default;
+}
+.uphone-cal-cell.is-sun {
+  color: #f87171;
+}
+.uphone-cal-cell.is-sat {
+  color: #60a5fa;
+}
+.uphone-cal-cell.is-today span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--uphone-danger);
+  color: #fff;
+}
+.uphone-cal-cell.is-selected {
+  background: var(--uphone-surface-2);
+}
+.uphone-cal-cell i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--uphone-accent);
+}
+.uphone-cal-cell i.is-ghost {
+  background: #e11d48;
+}
+.uphone-cal-list {
+  flex: 1;
+  min-height: 0;
+  margin-top: 6px;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.uphone-cal-list .uphone-empty {
+  padding: 16px;
+}
+.uphone-cal-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 12px;
+  padding: 8px 4px 8px 12px;
+  border-left: 3px solid var(--uphone-accent);
+  border-radius: 8px;
+  background: var(--uphone-surface);
+}
+.uphone-cal-event strong {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+.uphone-cal-event .uphone-plain {
+  padding: 4px 8px;
+}
+.uphone-cal-event.is-ghost {
+  border-left-color: #e11d48;
+}
+.uphone-cal-time {
+  flex: none;
+  width: 40px;
+  color: var(--uphone-muted);
+  font-size: 12px;
+}
+
+/* clock */
+.uphone-alarm-row {
+  padding: 12px 16px;
+}
+.uphone-alarm-time {
+  font-size: 30px !important;
+  font-weight: 300;
+}
+.uphone-alarm-row.is-off .uphone-list-main {
+  opacity: 0.45;
+}
+.uphone-alarm-row.is-ghost .uphone-alarm-time {
+  color: #fda4af;
+}
+.uphone-big-time {
+  font-size: 28px;
+  text-align: center;
+}
+.uphone-alarm-ring {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 30%, #3b2a4a, #0d0d12 70%);
+}
+.uphone-alarm-ring.is-ghost {
+  background: radial-gradient(circle at 50% 30%, #3a0b14, #050507 70%);
+}
+.uphone-alarm-ring-icon {
+  font-size: 44px;
+  animation: uphone-ring 1s infinite;
+}
+.uphone-alarm-ring strong {
+  font-size: 64px;
+  font-weight: 200;
+}
+.uphone-alarm-ring-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 40px;
+}
+.uphone-world-time {
+  font-size: 26px;
+  font-weight: 300;
+}
+.uphone-stopwatch {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  min-height: 0;
+  padding: 30px 16px 0;
+}
+.uphone-stopwatch-time,
+.uphone-timer-time {
+  font-size: 54px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 200;
+}
+.uphone-clock-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+.uphone-clock-buttons > * {
+  flex: 1;
+  margin: 0;
+}
+.uphone-cta.is-stop {
+  background: var(--uphone-danger);
+}
+.uphone-stopwatch .uphone-list {
+  align-self: stretch;
+}
+.uphone-timer-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+/* music */
+.uphone-cover {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 800;
+}
+.uphone-cover.is-small {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+.uphone-cover.is-large {
+  width: 92px;
+  height: 92px;
+  border-radius: 14px;
+  font-size: 36px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.uphone-now-playing {
+  display: flex;
+  flex: none;
+  gap: 14px;
+  margin: 10px 12px 2px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #2b2141, #17141f);
+}
+.uphone-now-playing.is-empty {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--uphone-muted);
+}
+.uphone-now-playing.is-empty span {
+  font-size: 30px;
+}
+.uphone-now-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.uphone-now-info strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.uphone-now-info > small {
+  color: var(--uphone-muted);
+  font-size: 12px;
+}
+.uphone-progress {
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.uphone-progress i {
+  display: block;
+  height: 100%;
+  background: var(--uphone-accent);
+}
+.uphone-progress-times {
+  display: flex;
+  justify-content: space-between;
+  color: var(--uphone-muted);
+  font-size: 10px;
+}
+.uphone-now-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.uphone-like {
+  padding: 4px;
+  color: #fb7185;
+  font-size: 18px;
+}
+.uphone-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.uphone-player-controls button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--uphone-text);
+  font-size: 15px;
+  cursor: pointer;
+}
+.uphone-player-controls button.is-main {
+  width: 38px;
+  height: 38px;
+  background: var(--uphone-text);
+  color: #111;
+}
+.uphone-player-controls.is-small button {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+.uphone-player-controls.is-small button.is-main {
+  width: 30px;
+  height: 30px;
+}
+.uphone-mini-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: var(--uphone-surface-2);
+}
+
+/* maps */
+.uphone-maps .uphone-search-wrap {
+  z-index: 2;
+}
+.uphone-map-results {
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  right: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: 12px;
+  background: var(--uphone-surface);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.uphone-map-results[hidden] {
+  display: none;
+}
+.uphone-map {
+  position: relative;
+  flex: 1;
+  min-height: 160px;
+  overflow: hidden;
+}
+.uphone-map-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.uphone-map-svg .map-ground {
+  fill: #1b2230;
+}
+.uphone-map-svg .map-park {
+  fill: #1f3b2c;
+}
+.uphone-map-svg .map-water {
+  fill: #18324a;
+}
+.uphone-map-svg .map-road {
+  stroke: #2f3a4d;
+  stroke-width: 7px;
+}
+.uphone-map-svg .map-road.is-main {
+  stroke: #4b5568;
+  stroke-width: 12px;
+}
+.uphone-map-svg .map-route {
+  fill: none;
+  stroke: #60a5fa;
+  stroke-width: 5px;
+  stroke-dasharray: 10 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.uphone-map-label {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--uphone-text);
+  font: inherit;
+  transform: translate(-50%, -60%);
+  cursor: pointer;
+}
+.uphone-map-label span {
+  font-size: 16px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+.uphone-map-label.is-selected span {
+  font-size: 24px;
+}
+.uphone-map-label small {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.uphone-map-me {
+  position: absolute;
+  z-index: 2;
+  margin-top: 10px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.25);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.uphone-place-card {
+  flex: none;
+  padding: 10px 14px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--uphone-surface);
+}
+.uphone-place-card .uphone-section-label {
+  padding: 0 0 4px;
+}
+.uphone-place-card .uphone-chips {
+  padding: 4px 0;
+}
+.uphone-place-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.uphone-place-icon {
+  font-size: 24px;
+}
+.uphone-place-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.uphone-place-actions > * {
+  flex: 1;
+  margin: 0;
+  padding: 10px;
+  font-size: 14px;
+}
+.uphone-place-route {
+  margin: 8px 0 0;
+  color: #93c5fd;
+  font-size: 12px;
+}
+.uphone-timeline {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 16px;
+  overflow-y: auto;
+}
+.uphone-timeline-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.uphone-timeline-row:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 40px;
+  bottom: -10px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.uphone-timeline-dot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--uphone-surface-2);
+  font-size: 15px;
+}
+.uphone-timeline-row.is-ghost strong {
+  color: #fda4af;
+}
+.uphone-timeline-row.is-ghost .uphone-timeline-dot {
+  background: #4c0519;
+}
+
+/* browser */
+.uphone-browser {
+  background: #f8fafc;
+  color: #0f172a;
+}
+.uphone-browser .uphone-header {
+  border-bottom-color: #e2e8f0;
+  background: #fff;
+}
+.uphone-browser .uphone-back {
+  color: #2563eb;
+}
+.uphone-url {
+  display: block;
+  padding: 5px 10px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.uphone-browser .uphone-search {
+  border: 2px solid #14b8a6;
+  background: #fff;
+  color: #0f172a;
+}
+.uphone-browser .uphone-section-label {
+  padding: 14px 0 6px;
+  color: #64748b;
+}
+.uphone-browser .uphone-plain {
+  color: #0f172a;
+}
+.uphone-browser .uphone-empty {
+  color: #64748b;
+}
+.uphone-browser-home {
+  flex: 1;
+  min-height: 0;
+  padding: 18px 16px;
+  overflow-y: auto;
+}
+.uphone-engine-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 6px 0 14px;
+  color: #0d9488;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+.uphone-engine-logo small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.uphone-recent-search {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.uphone-recent-search .uphone-plain:first-child {
+  flex: 1;
+  padding: 6px 0;
+  overflow: hidden;
+  font-size: 14px;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.uphone-recent-search small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+.uphone-recent-search .uphone-plain:last-child {
+  padding: 6px;
+  color: #94a3b8;
+}
+.uphone-trending {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+  margin: 0;
+  padding-left: 20px;
+  color: #0d9488;
+  font-size: 13px;
+  font-weight: 700;
+}
+.uphone-trending .uphone-plain {
+  padding: 5px 0;
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.uphone-news {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.uphone-news strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.uphone-news small,
+.uphone-result small,
+.uphone-web-page > small {
+  color: #0d9488;
+  font-size: 11px;
+}
+.uphone-results {
+  padding: 0 12px 12px;
+}
+.uphone-result {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.uphone-result strong {
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 600;
+}
+.uphone-result p {
+  margin: 0;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.uphone-web-page {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 18px;
+  overflow-y: auto;
+  background: #fff;
+}
+.uphone-web-page h2 {
+  margin: 6px 0 14px;
+  font-size: 19px;
+  line-height: 1.35;
+}
+.uphone-web-page p {
+  margin: 0 0 12px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.uphone-browser ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+}
+
+/* feed */
+.uphone-feed-logo {
+  background: linear-gradient(90deg, #fde68a, #fb7185, #a78bfa);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-size: 18px;
+  font-weight: 900;
+}
+.uphone-feed-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.uphone-post {
+  padding: 12px 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.uphone-post-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0 14px 8px;
+  border: 0;
+  background: none;
+  color: var(--uphone-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.uphone-form .uphone-post-head {
+  padding: 0;
+  cursor: default;
+}
+.uphone-post.is-ghost .uphone-post-head strong {
+  text-shadow: 1px 0 rgba(255, 0, 60, 0.6), -1px 0 rgba(0, 200, 255, 0.6);
+}
+.uphone-post-photo {
+  display: flex;
+  align-items: flex-end;
+  aspect-ratio: 4 / 3;
+  padding: 12px;
+}
+.uphone-post-photo.is-small {
+  width: 120px;
+  border-radius: 12px;
+}
+.uphone-post-photo span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.uphone-post-text {
+  margin: 8px 14px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.uphone-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px 0;
+}
+.uphone-post-actions .uphone-plain {
+  padding: 6px 8px;
+  color: var(--uphone-text);
+  font-size: 15px;
+}
+.uphone-post-actions .uphone-plain.is-liked {
+  color: #fb7185;
+}
+.uphone-post-likes {
+  margin-left: auto;
+  padding-right: 8px;
+  color: var(--uphone-muted);
+  font-size: 11px;
+}
+.uphone-post-more {
+  display: block;
+  width: 100%;
+  padding: 2px 14px;
+  border: 0;
+  background: none;
+  color: var(--uphone-muted);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.uphone-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.uphone-comment {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.uphone-comment small {
+  color: var(--uphone-muted);
+  font-size: 10px;
+}
+.uphone-post-attach .uphone-secondary {
+  width: 100%;
+}
+.uphone-feed .uphone-composer .uphone-field {
+  flex: 1;
+}
+
 /* ── stages: the phone slowly stops being yours ── */
 
 /* 2단계 · 균열: a rare flicker */
@@ -1401,5 +3067,22 @@ label.uphone-row {
     border-right: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 50%;
     font-size: 16px;
+  }
+}
+
+/* phones: the launcher sits at the header's right edge, so header actions move left of it */
+@media (max-width: 520px) {
+  .uphone-root[data-open="true"] .uphone-header {
+    padding-right: 48px;
+  }
+  .uphone-keys,
+  .uphone-keypad-bar {
+    gap: 10px 18px;
+  }
+}
+@media (max-width: 520px) {
+  /* keep the home widget clear of the launcher in the top-right corner */
+  .uphone-root[data-open="true"] .uphone-home {
+    padding-top: 44px;
   }
 }

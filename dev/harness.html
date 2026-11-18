@@ -92,6 +92,25 @@
           window.__requests.push({ path, init });
           if (path === "/api/generate/raw") {
             await new Promise((r) => setTimeout(r, 700));
+            // The phone's own tools (search results, web pages) get answers in the shape they ask for.
+            const sent = JSON.parse(init.body ?? "{}").messages ?? [];
+            const system = sent[0]?.content ?? "";
+            const last = sent.at(-1)?.content ?? "";
+            if (system.includes("제목 | 사이트 이름")) {
+              const q = last.replace(/^검색어:\s*/u, "");
+              return json({
+                content: [
+                  `${q} 완벽 정리 | 살림백과 | ${q}에 필요한 것과 순서를 한눈에 정리했어요.`,
+                  `${q}, 직접 해 봤습니다 | 주말 기록장 블로그 | 처음 해 보는 사람도 따라 할 수 있게 사진과 함께 적었어요.`,
+                  `요즘 ${q} 찾는 사람 늘어 | 하루뉴스 | 겨울을 앞두고 관련 검색이 크게 늘었다.`,
+                  `${q} 질문드려요 | 물어봐 지식 커뮤니티 | 답변 8개 · 채택된 답변 있음`,
+                  `${q} 실패담 모음 | 동네 카페 게시판 | 이렇게 하면 망해요… 경험담 공유합니다`,
+                ].join("\n"),
+              });
+            }
+            if (system.includes("text of a web page")) {
+              return json({ content: "처음엔 어렵게 느껴지지만 몇 가지만 기억하면 돼요.\n재료는 미리 준비해 두고, 순서를 지키는 게 가장 중요해요.\n마지막으로, 너무 서두르지 마세요. 천천히 하면 누구나 할 수 있어요." });
+            }
             return json({ content: replies[(window.__requests.filter((r) => r.path === path).length - 1) % replies.length] });
           }
           if (path.startsWith("/api/chats/chat-1/messages")) {
