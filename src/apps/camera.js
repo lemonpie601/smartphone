@@ -33,6 +33,8 @@ function photoTint(photo) {
     : `linear-gradient(160deg, hsl(${hue} 45% 42%), hsl(${(hue + 50) % 360} 40% 22%))`;
 }
 
+let selfie = false;
+
 function renderCamera() {
   const input = h("input", { class: "uphone-camera-input", placeholder: "무엇을 찍을까요? (예: 카페 창가의 라떼)", "aria-label": "찍을 장면" });
   const flash = h("div", { class: "uphone-flash" });
@@ -46,10 +48,10 @@ function renderCamera() {
     const desc = input.value.trim();
     if (!desc) return showToast("찍을 장면을 적어 주세요.");
     const cs = chatState();
-    cs.photos.push({ id: `p${Date.now().toString(36)}`, t: Date.now(), desc: desc.slice(0, 200) });
+    cs.photos.push({ id: `p${Date.now().toString(36)}`, t: Date.now(), desc: desc.slice(0, 200), ...(selfie ? { selfie: true } : {}) });
     trimList(cs.photos, MAX_PHOTOS);
     save();
-    logActivity(`사진을 찍었다: "${snippet(desc)}"`);
+    logActivity(selfie ? `셀카를 찍었다: "${snippet(desc)}"` : `사진을 찍었다: "${snippet(desc)}"`);
     input.value = "";
     flash.classList.remove("is-on");
     void flash.offsetWidth; // restart the animation
@@ -64,9 +66,27 @@ function renderCamera() {
     "div",
     { class: "uphone-camera" },
     appHeader("카메라"),
-    h("div", { class: "uphone-viewfinder" }, h("div", { class: "uphone-grid-lines" }), stageIndex() >= 2 ? h("span", { class: "uphone-rec" }, "● REC") : null, flash),
+    h("div", { class: `uphone-viewfinder ${selfie ? "is-selfie" : ""}` }, h("span", { class: "uphone-cam-mode" }, selfie ? "전면" : "후면"), h("div", { class: "uphone-grid-lines" }), stageIndex() >= 2 ? h("span", { class: "uphone-rec" }, "● REC") : null, flash),
     input,
-    h("div", { class: "uphone-camera-bar" }, thumb, h("button", { class: "uphone-shutter", type: "button", "aria-label": "촬영", onclick: shoot }), h("span")),
+    h(
+      "div",
+      { class: "uphone-camera-bar" },
+      thumb,
+      h("button", { class: "uphone-shutter", type: "button", "aria-label": "촬영", onclick: shoot }),
+      h(
+        "button",
+        {
+          class: "uphone-camera-flip",
+          type: "button",
+          "aria-label": selfie ? "후면 카메라로 바꾸기" : "전면 카메라로 바꾸기",
+          onclick: () => {
+            selfie = !selfie;
+            render();
+          },
+        },
+        "⟲",
+      ),
+    ),
   );
 }
 
@@ -83,6 +103,22 @@ function renderGallery() {
         "div",
         { class: "uphone-photo-meta" },
         h("span", null, `${new Date(open.t).toLocaleString()} · 촬영: ${open.unknown ? "알 수 없음" : "나"}`),
+        h(
+          "button",
+          {
+            class: "uphone-plain",
+            type: "button",
+            "aria-label": "즐겨찾기",
+            onclick: () => {
+              open.fav = !open.fav;
+              save();
+              if (open.fav) logActivity(`사진을 즐겨찾기에 넣었다: "${snippet(open.desc)}"`);
+              render();
+            },
+          },
+          open.fav ? "♥" : "♡",
+        ),
+        h("button", { class: "uphone-plain", type: "button", onclick: () => sharePhoto(open) }, "보내기"),
         h(
           "button",
           {
@@ -114,5 +150,33 @@ function renderGallery() {
             h("button", { class: "uphone-tile", type: "button", style: `background:${photoTint(photo)}`, onclick: () => go("gallery", photo.id) }, h("span", null, photo.desc)),
           ),
         ),
+  );
+}
+
+/** Sends a photo from the gallery to someone, by 톡 or 문자. */
+function sharePhoto(photo) {
+  let close = null;
+  const pick = (kind, c) => {
+    close?.();
+    sendPhotoTo(kind, c, photo);
+    go(kind === "talk" ? "talk" : "messages", c.id);
+  };
+  close = phoneSheet(
+    "사진 보내기",
+    h(
+      "div",
+      { class: "uphone-share-list" },
+      contactList().map((c) =>
+        h(
+          "div",
+          { class: "uphone-share-row" },
+          avatar(c, "small"),
+          h("span", null, c.name),
+          h("button", { class: "uphone-secondary is-small", type: "button", onclick: () => pick("talk", c) }, "톡"),
+          h("button", { class: "uphone-secondary is-small", type: "button", onclick: () => pick("sms", c) }, "문자"),
+        ),
+      ),
+    ),
+    [["취소", null]],
   );
 }
