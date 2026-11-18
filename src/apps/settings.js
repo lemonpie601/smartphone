@@ -41,6 +41,11 @@ function renderSettingsHome() {
         logActivity(on ? "방해 금지 모드를 켰다" : "방해 금지 모드를 껐다");
         renderStatus();
       }),
+      toggleRow("소리", data.settings.sound !== false, (on) => {
+        data.settings.sound = on;
+        save();
+        if (on) chime();
+      }),
     ),
     h(
       "div",
@@ -118,6 +123,23 @@ function renderDeveloperOptions() {
         },
       },
       "지금 전화 걸려오게 하기",
+    ),
+    h(
+      "button",
+      {
+        class: "uphone-secondary",
+        type: "button",
+        onclick: () => {
+          if (!joined()) return showToast(`${APP.name}에 먼저 가입해 주세요.`);
+          void maybePartnerReachesOut({ force: true });
+        },
+      },
+      `${APP.name} 상대가 먼저 연락하게 하기`,
+    ),
+    h(
+      "button",
+      { class: "uphone-secondary", type: "button", onclick: () => maybeEasterEgg(true) },
+      "이스터에그 실행 (단계에 맞는 것)",
     ),
     h(
       "button",

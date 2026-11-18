@@ -72,10 +72,13 @@ const onKey = (event) => {
 window.addEventListener("keydown", onKey);
 
 // Story gate, main-chat side: while the intro is locked, roleplay turns for this chat are refused.
+// Otherwise each roleplay turn for this chat carries the phone block (src/story/roleplay.js), and its reply
+// is read afterwards for hidden phone lines.
 // It works on Marinara's network request rather than its DOM, so UI changes do not break it.
 // ponytail: matches only POST /api/generate with a JSON body; a new generation route would bypass it.
 const pageFetch = window.fetch;
 const guardedFetch = function (input, init) {
+  let phoneBody = null;
   try {
     const method = String(init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
     const url = new URL(input instanceof Request ? input.url : String(input), window.location.origin);
@@ -92,11 +95,22 @@ const guardedFetch = function (input, init) {
           }),
         );
       }
+      phoneBody = withPhoneContext(init.body);
     }
   } catch {
-    // Not a request this guard understands: let it through.
+    phoneBody = null; // Not a request this guard understands: let it through untouched.
   }
-  return pageFetch.apply(window, arguments);
+  if (!phoneBody) return pageFetch.apply(window, arguments);
+  return (async () => {
+    const response = await pageFetch.call(window, input, { ...init, body: phoneBody });
+    // Multiplayer rooms refuse per-request injections; send that turn exactly as Marinara wrote it.
+    if (response.status === 400) {
+      const reason = await response.clone().json().catch(() => null);
+      if (reason?.code === "room_action_required") return pageFetch.call(window, input, init);
+    }
+    afterRoleplayTurn(response);
+    return response;
+  })();
 };
 window.fetch = guardedFetch;
 
@@ -112,6 +126,8 @@ marinara.setInterval(() => {
   }
   if (ticks % 10 === 0) void refreshIfCastChanged(); // same chat, new character or persona
   if (ticks % 30 === 0) maybeIncomingCall();
+  if (ticks % 45 === 0) void maybePartnerReachesOut();
+  if (ticks % 60 === 0) maybeEasterEgg();
 }, 1000);
 
 void refreshContext();
@@ -123,5 +139,6 @@ return () => {
   if (window.fetch === guardedFetch) window.fetch = pageFetch;
   if (window.UserPhone === userPhoneApi) delete window.UserPhone;
   leaveExternalApp();
+  stopEasterEggs();
   root.remove();
 };

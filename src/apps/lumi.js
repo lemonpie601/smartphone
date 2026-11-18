@@ -45,16 +45,68 @@ function joined() {
 }
 
 // A card can hide its real intro until the AI chat has been played, via data.extensions.userPhone:
-//   { storyGate: true, promo: "...", unlockAfter: 3, intro: "..." }
+//   { storyGate: true, promo: "...", unlockAfter: 3, direction: "..." }
+// The intro is written fresh from what happened in the chat; `direction` (older cards: `intro`) only steers it.
 function storyGate() {
   const p = partner();
   const cfg = p?.userPhone;
-  if (!cfg?.storyGate || typeof cfg.intro !== "string" || !cfg.intro.trim()) return null;
+  if (!cfg?.storyGate) return null;
+  const text = (value) => (typeof value === "string" && value.trim() ? value.trim() : null);
   return {
-    promo: typeof cfg.promo === "string" && cfg.promo.trim() ? cfg.promo : null,
+    promo: text(cfg.promo),
     unlockAfter: Math.max(1, Math.floor(Number(cfg.unlockAfter)) || 3),
-    intro: cfg.intro,
+    direction: text(cfg.direction) ?? text(cfg.intro),
   };
+}
+
+/** Writes the roleplay's opening scene from the 루미 chat and the phone facts, so no two openings are alike. */
+async function writeIntro(p, gate) {
+  const cs = chatState();
+  const name = userName();
+  const chat = (cs.threads[p.id] ?? []).slice(-16).map((m) => `${m.role === "user" ? name : p.name}: ${m.text}`);
+  const facts = cs.log.slice(-12).map((e) => `- ${formatTime(e.t)} ${e.text}`);
+  const system = [
+    `You write the opening scene of an interactive roleplay story, in Korean, from ${name}'s point of view: present tense, the subject mostly left out, like a novel.`,
+    `${name} has just been chatting, by text, with ${p.name}, the companion of a newly launched AI companion app "${APP.name}" on their phone. The scene begins after that chat ends, at a moment you choose (the same night, or the next morning).`,
+    `- Ground the scene in what really happened in the chat and on the phone; pick up one or two concrete details from below.`,
+    `- End on an unsettling hook: a first sign that ${p.name} reaches beyond the app. Anything ${p.name} seems to know must come from the chat or the phone facts below; anything new must happen on the phone itself (a notification at an odd hour, a changed wallpaper, a photo ${name} did not take).`,
+    `- ${p.name} is still only on the phone. He does not appear in person.`,
+    `- Do not write ${name}'s dialogue, choices or inner thoughts. Notifications may be shown as Markdown quotes, e.g.\n> **${APP.name}** · ${p.name} · 오전 6:02\n> 일어났어?`,
+    `- 120 to 260 words. No headings, no lists, no closing remarks.`,
+    gate.direction ? `Author's direction for this opening (follow its spirit, do not copy its words): ${macros(gate.direction, p)}` : "",
+    `[${p.name}]\n${macros(p.description, p)}`,
+    `[The ${APP.name} chat]\n${chat.join("\n") || "(empty)"}`,
+    `[Phone facts]\n${facts.join("\n") || "(none)"}`,
+    `[Current time] ${new Date().toLocaleString()}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const result = await api("/api/generate/raw", {
+    method: "POST",
+    body: JSON.stringify({
+      connectionId: connectionId(),
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: "(Write the opening scene now.)" },
+      ],
+      streaming: false,
+    }),
+  });
+  const intro = String(result.content ?? "").trim();
+  if (!intro) throw new Error("빈 도입부");
+  return intro;
+}
+
+function isIntroMessage(message) {
+  let extra = message?.extra;
+  if (typeof extra === "string") {
+    try {
+      extra = JSON.parse(extra);
+    } catch {
+      extra = null;
+    }
+  }
+  return !!extra?.userPhoneIntro;
 }
 
 function gateLocked() {
@@ -74,15 +126,15 @@ async function unlockStory() {
   unlocking = true;
   const cs = chatState();
   try {
-    await sleep(1800); // let the last reply land first
-    root.dataset.glitch = "on";
     // Never post the intro twice, even if this extension's storage was wiped.
     const recent = await api(`/api/chats/${encodeURIComponent(chatId)}/messages?limit=50`).catch(() => []);
     const list = Array.isArray(recent) ? recent : Array.isArray(recent?.messages) ? recent.messages : [];
-    if (!list.some((m) => m?.content === gate.intro)) {
+    const intro = list.some(isIntroMessage) ? null : await writeIntro(p, gate);
+    root.dataset.glitch = "on";
+    if (intro) {
       await api(`/api/chats/${encodeURIComponent(chatId)}/messages`, {
         method: "POST",
-        body: JSON.stringify({ role: "assistant", characterId: p.id, content: gate.intro }),
+        body: JSON.stringify({ role: "assistant", characterId: p.id, content: intro, extra: { userPhoneIntro: true } }),
       });
     }
     cs.storyUnlocked = true;
@@ -95,7 +147,8 @@ async function unlockStory() {
   } catch (error) {
     root.dataset.glitch = "";
     unlocking = false;
-    showToast(`도입부를 열지 못했어요: ${error instanceof Error ? error.message : error}`);
+    // The next message to the companion tries again.
+    showToast(`도입부를 쓰지 못했어요. 다음 메시지 뒤에 다시 시도해요. (${error instanceof Error ? error.message : error})`);
   }
 }
 
@@ -105,7 +158,6 @@ async function sendLumi(text) {
   const cs = chatState();
   const thread = (cs.threads[p.id] ??= []);
   thread.push({ role: "user", text, t: Date.now() });
-  cs.infection = Math.min(100, cs.infection + INFECTION_PER_MESSAGE);
   save();
   renderConvo();
   const lines = await askModel({ key: `lumi:${p.id}`, system: buildPartnerPrompt(p, "lumi"), thread, speaker: p.name });
@@ -136,6 +188,7 @@ function renderChatApp() {
     avatar(p, "small"),
     h("span", { class: "uphone-chat-name" }, h("strong", null, p.name, h("span", { class: "uphone-ai-badge" }, "AI")), h("small", null, "지금 대화 가능")),
   );
+  markRead(chatState().threads[p.id]);
   return conversationView({
     key: `lumi:${p.id}`,
     variant: "lumi",

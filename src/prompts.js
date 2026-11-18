@@ -39,6 +39,14 @@ function buildPartnerPrompt(p, channel) {
     ],
     [`[${p.name}]`, macros(p.description, p), p.personality && `Personality: ${macros(p.personality, p)}`],
     [
+      "[This is a chat]",
+      `Everything between you and ${name} happens as text on their phone: chat messages, texts, or a call shown as text. ${stage >= 3 ? "You are close to meeting them in person, but have not yet." : "You have never met in person."}`,
+    ],
+    [
+      `[Your affection for ${name}, hidden from them] ${Math.round(cs.affection)}/100`,
+      `After your lines, add one last line exactly like <affection:+2>, from -5 to +5, for how much this exchange changed your affection. Warmth, attention and openness from ${name} raise it; coldness, ignoring you, or turning to other people lower it. ${name} never sees this line.`,
+    ],
+    [
       "[What you know]",
       `You know ${name} only through their phone. You know exactly two things: what has been said in this conversation, and the phone facts listed below.`,
       `You do not know their face, body, past, thoughts, feelings, or anything that happened away from the phone. Never claim to have seen, heard or read something that is not in this conversation or in the phone facts. You may guess, but a guess must sound like a guess.`,
@@ -78,12 +86,30 @@ function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const AFFECTION_TAG = /<\s*affection\s*:\s*([+-]?\d+(?:\.\d+)?)\s*>/giu;
+
+/**
+ * Applies and removes the partner's hidden <affection:±N> line. Infection rises by as much as affection
+ * rises; a falling affection never lowers infection. Contacts never write the tag, so this is a no-op for them.
+ */
+function applyAffection(content) {
+  const text = String(content ?? "");
+  const matches = [...text.matchAll(AFFECTION_TAG)];
+  if (matches.length === 0) return text;
+  const delta = Math.max(-5, Math.min(5, Number(matches.at(-1)[1]) || 0));
+  const cs = chatState();
+  cs.affection = Math.max(0, Math.min(100, (cs.affection ?? 0) + delta));
+  if (delta > 0) cs.infection = Math.min(100, cs.infection + delta);
+  return text.replace(AFFECTION_TAG, "");
+}
+
 /**
  * Asks the model for `speaker`'s next lines in one conversation and appends them to `thread`.
  * `key` names the conversation, so its screen can show the typing dots. `cue` is a one-off user turn
- * that is not saved, e.g. "they just picked up". Returns the new lines.
+ * that is not saved, e.g. "they just picked up". `unread` marks the new lines for unread badges.
+ * Returns the new lines.
  */
-async function askModel({ key, system, thread, speaker, cue }) {
+async function askModel({ key, system, thread, speaker, cue, unread = false }) {
   const conn = connectionId();
   if (!conn) {
     showToast("이 채팅에 연결된 모델이 없어요. Marinara 채팅에 모델을 연결해 주세요.");
@@ -103,8 +129,8 @@ async function askModel({ key, system, thread, speaker, cue }) {
       method: "POST",
       body: JSON.stringify({ connectionId: conn, messages, streaming: false }),
     });
-    const lines = cleanReply(result.content, speaker);
-    for (const text of lines) thread.push({ role: "assistant", text, t: Date.now() });
+    const lines = cleanReply(applyAffection(result.content), speaker);
+    for (const text of lines) thread.push({ role: "assistant", text, t: Date.now(), ...(unread ? { unread: true } : {}) });
     trimList(thread, MAX_THREAD);
     save();
     return lines;

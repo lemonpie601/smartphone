@@ -21,7 +21,6 @@ const MAX_CALLS = 50; // call log entries kept per chat
 const MAX_PHOTOS = 60; // gallery photos kept per chat
 const PROMPT_HISTORY = 30; // conversation messages sent to the model
 const PROMPT_LOG = 15; // phone facts the partner can "see"
-const INFECTION_PER_MESSAGE = 4;
 const STAGE_THRESHOLDS = [0, 30, 60, 90]; // normal, cracks, breach, crossing over
 
 /** People already saved on a fresh phone. Each chat gets its own copy, so edits stay per story. */
@@ -69,7 +68,8 @@ function chatState() {
   cs.threads ??= {};
   cs.log ??= [];
   cs.memo ??= "";
-  cs.infection ??= 0;
+  cs.infection ??= 0; // how far the partner has reached into the phone; rises with affection
+  cs.affection ??= 0; // the partner's hidden affection for {{user}}, reported by the model
   cs.partnerId ??= null;
   cs.sms ??= {};
   cs.talk ??= {};

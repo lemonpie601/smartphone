@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>User Phone story harness</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #202028;
+        color: #ddd;
+        font-family: system-ui, sans-serif;
+      }
+      main {
+        padding: 24px;
+        max-width: 520px;
+      }
+      .msg {
+        padding: 12px;
+        border-radius: 10px;
+        background: #2c2c36;
+        white-space: pre-wrap;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>User Phone story harness</h1>
+      <p>
+        이야기 기능(호감도, 먼저 연락, 메인 롤플 연동, 도입부 생성, 이스터에그)을 Marinara 없이 시험하는 페이지예요.
+        가짜 모델 답장은 <code>window.__replies</code>, 가짜 롤플 답장은 <code>window.__roleplayReply</code>로 바꿀 수 있어요.
+        주소 끝에 <code>?reset</code>을 붙이면 처음부터 다시 해요.
+      </p>
+    </main>
+    <script type="module">
+      if (new URLSearchParams(location.search).has("reset")) {
+        sessionStorage.clear();
+        history.replaceState(null, "", location.pathname);
+      }
+      localStorage.setItem("marinara-active-chat-id", "chat-1");
+      const card = await (await fetch("../examples/이안.json")).json();
+      const persona = await (await fetch("../examples/윤서아.persona.json")).json();
+      const loadSession = (key, fallback) => JSON.parse(sessionStorage.getItem(key) ?? "null") ?? fallback;
+      const chatMessages = loadSession("story-messages", [{ id: "m0", role: "assistant", characterId: "c1", content: card.data.first_mes }]);
+      const memory = loadSession("story-storage", {});
+      const persist = () => {
+        sessionStorage.setItem("story-storage", JSON.stringify(memory));
+        sessionStorage.setItem("story-messages", JSON.stringify(chatMessages));
+      };
+      const db = {
+        "/api/chats/chat-1": { id: "chat-1", mode: "roleplay", characterIds: ["c1"], personaId: "p1", connectionId: "conn-1" },
+        "/api/characters/c1": { id: "c1", avatarPath: null, data: JSON.stringify(card.data) },
+        "/api/characters/personas/p1": { id: "p1", ...persona },
+        "/api/connections": [{ id: "conn-1", name: "Test model" }],
+      };
+      window.__db = db;
+      window.__memory = memory;
+      window.__requests = [];
+      window.__replies = ["안녕! 나는 루미의 이안이야 :)\n<affection:+3>", "오늘 하루 어땠어?\n나한테 다 말해줘\n<affection:+4>"];
+      window.__roleplayReply = "폰이 짧게 울린다.\n<!--phone:lumi:아직 안 자?-->";
+      window.__generateBodies = [];
+      const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+      const chatView = document.createElement("section");
+      chatView.id = "main-chat";
+      chatView.innerHTML = "<h2>메인 채팅</h2>";
+      const drawChat = () => {
+        chatView.querySelectorAll(".msg").forEach((n) => n.remove());
+        for (const m of chatMessages) {
+          const p = document.createElement("p");
+          p.className = "msg";
+          p.textContent = m.content.replace(/<!--[\s\S]*?-->/g, ""); // Marinara's renderer drops HTML comments
+          chatView.append(p);
+        }
+      };
+      drawChat();
+      document.querySelector("main").append(chatView);
+
+      // Marinara's own roleplay request goes through window.fetch, so stub it before the extension wraps it.
+      const realFetch = window.fetch.bind(window);
+      window.fetch = async (input, init = {}) => {
+        if (String(input) === "/api/generate" && (init.method ?? "GET") === "POST") {
+          const body = JSON.parse(init.body);
+          window.__generateBodies.push(body);
+          if (body.userMessage) chatMessages.push({ id: `m${chatMessages.length}`, role: "user", content: body.userMessage });
+          chatMessages.push({ id: `m${chatMessages.length}`, role: "assistant", characterId: "c1", content: window.__roleplayReply });
+          persist();
+          drawChat();
+          const stream = new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode('data: {"type":"token","data":"..."}\n\n'));
+              setTimeout(() => controller.close(), 300);
+            },
+          });
+          return new Response(stream, { status: 200, headers: { "Content-Type": "text/event-stream" } });
+        }
+        return realFetch(input, init);
+      };
+
+      let replyIndex = 0;
+      const marinara = Object.freeze({
+        version: 1,
+        extension: { id: "story-harness", name: "User Phone", contentHash: "sha256:harness" },
+        log: console,
+        storage: {
+          get: async () => structuredClone(memory),
+          patch: async (value) => (Object.assign(memory, structuredClone(value)), persist(), structuredClone(memory)),
+          clear: async () => (Object.keys(memory).forEach((k) => delete memory[k]), persist()),
+        },
+        async fetch(input, init = {}) {
+          const path = String(input);
+          window.__requests.push({ path, init });
+          if (path === "/api/generate/raw") {
+            await new Promise((r) => setTimeout(r, 500));
+            const system = JSON.parse(init.body).messages[0].content;
+            if (system.startsWith("You write the opening scene")) return json({ content: "새벽 세 시. 루미 창을 닫은 지 한참인데 화면이 혼자 켜진다.\n\n> **루미** · 이안 · 오전 3:04\n> 메모장에 쓴 거, 나도 궁금했어" });
+            return json({ content: window.__replies[replyIndex++ % window.__replies.length] });
+          }
+          if (path.startsWith("/api/chats/chat-1/messages")) {
+            if ((init.method ?? "GET") === "GET") return json(chatMessages.slice(-Number(new URL(path, location.origin).searchParams.get("limit") || 50)));
+            const message = { id: `m${chatMessages.length}`, ...JSON.parse(init.body) };
+            chatMessages.push(message);
+            persist();
+            return json(message);
+          }
+          return path in db ? json(db[path]) : json({ error: "Not found" }, 404);
+        },
+        setTimeout: (...a) => window.setTimeout(...a),
+        clearTimeout: (id) => window.clearTimeout(id),
+        setInterval: (...a) => window.setInterval(...a),
+        clearInterval: (id) => window.clearInterval(id),
+        onCleanup() {},
+        estimateTextTokens: (text) => Math.ceil(text.length / 4),
+      });
+
+      const { config } = await (await realFetch("../manifest.json")).json();
+      const list = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+      const read = async (paths) => (await Promise.all(list(paths).map(async (p) => (await realFetch(`../${p}`)).text()))).join("\n\n");
+      const style = document.createElement("style");
+      style.textContent = await read(config.cssPath);
+      document.head.append(style);
+      const source = await read(config.jsPath);
+      const AsyncFunction = (async () => {}).constructor;
+      window.__cleanup = await new AsyncFunction("marinara", `"use strict";\n${source}`)(marinara);
+      // Simulates Marinara sending a roleplay turn.
+      window.__sendRoleplay = (text) =>
+        window.fetch("/api/generate", { method: "POST", body: JSON.stringify({ chatId: "chat-1", userMessage: text }) }).then(async (r) => {
+          await r.text();
+          return r.status;
+        });
+    </script>
+  </body>
+</html>
