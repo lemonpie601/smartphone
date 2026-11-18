@@ -58,6 +58,7 @@
         "/api/characters/personas/p1": { id: "p1", ...persona },
         "/api/connections": [{ id: "conn-1", name: "Test model" }],
       };
+      window.__db = db; // tests edit the fake chat, e.g. to switch its persona
       const replies = ["안녕! 나는 루미의 이안이야 :)", "오늘 하루는 어땠어?\n나한테 다 말해줘"];
       window.__requests = [];
       const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });

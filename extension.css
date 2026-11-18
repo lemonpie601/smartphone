@@ -203,11 +203,17 @@
   color: var(--uphone-muted);
   font-size: 13px;
 }
+.uphone-notifs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 36px;
+}
 .uphone-notif {
   display: flex;
   gap: 10px;
   width: 100%;
-  margin-top: 36px;
   padding: 12px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.1);
@@ -227,9 +233,30 @@
 
 /* home */
 .uphone-home {
+  display: flex;
   flex: 1;
-  padding: 28px 18px;
+  flex-direction: column;
+  min-height: 0;
+  padding: 28px 18px 10px;
   background: linear-gradient(160deg, #2a2140, #121826);
+}
+.uphone-dock {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: auto;
+  padding: 12px 8px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+}
+.uphone-dock .uphone-app-label {
+  display: none;
+}
+.uphone-app-label {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .uphone-grid {
   display: grid;
@@ -287,10 +314,28 @@
 .uphone-icon.is-settings {
   background: #6b6b7b;
 }
+.uphone-icon.is-phone {
+  background: linear-gradient(160deg, #4ade80, #16a34a);
+}
+.uphone-icon.is-sms {
+  background: linear-gradient(160deg, #60a5fa, #2563eb);
+}
+.uphone-icon.is-talk {
+  background: linear-gradient(160deg, #2dd4bf, #0f766e);
+}
+.uphone-icon.is-camera {
+  background: linear-gradient(160deg, #4b5563, #1f2937);
+}
+.uphone-icon.is-gallery {
+  background: linear-gradient(160deg, #fbcfe8, #f472b6 50%, #fb923c);
+}
+.uphone-icon.is-ext {
+  background: linear-gradient(160deg, #475569, #1e293b);
+}
 
 /* app chrome */
 .uphone-app-view,
-.uphone-aichat {
+.uphone-convo {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -839,6 +884,422 @@
   color: var(--uphone-danger);
   font: inherit;
   cursor: pointer;
+}
+
+/* ── shared lists, tabs, forms ── */
+
+.uphone-header-action {
+  border: 0;
+  background: none;
+  color: var(--uphone-accent);
+  font-size: 22px;
+  cursor: pointer;
+}
+.uphone-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+.uphone-list-row {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: none;
+  color: var(--uphone-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+div.uphone-list-row {
+  cursor: default;
+}
+.uphone-list-row > small {
+  flex: none;
+  color: var(--uphone-muted);
+  font-size: 11px;
+}
+.uphone-list-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.uphone-list-main strong {
+  font-size: 14px;
+}
+.uphone-list-main small {
+  overflow: hidden;
+  color: var(--uphone-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.uphone-list-row.is-missed strong,
+.uphone-list-row.is-missed .uphone-call-dir {
+  color: var(--uphone-danger);
+}
+/* the contact nobody saved */
+.uphone-list-row.is-ghost strong {
+  color: #d4d4d8;
+  text-shadow: 1px 0 rgba(255, 0, 60, 0.6), -1px 0 rgba(0, 200, 255, 0.6);
+}
+.uphone-call-dir {
+  width: 20px;
+  color: var(--uphone-muted);
+  text-align: center;
+}
+.uphone-row-actions {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+.uphone-row-actions button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--uphone-surface-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.uphone-tabs {
+  display: grid;
+  flex: none;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.uphone-tab {
+  padding: 11px;
+  border: 0;
+  background: none;
+  color: var(--uphone-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.uphone-tab.is-active {
+  color: var(--uphone-accent);
+  font-weight: 700;
+}
+.uphone-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+.uphone-field {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: var(--uphone-surface);
+  color: var(--uphone-text);
+  font: inherit;
+  font-size: 14px;
+  resize: none;
+}
+.uphone-form .uphone-cta {
+  margin-top: 6px;
+}
+.uphone-secondary {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: var(--uphone-surface);
+  color: var(--uphone-text);
+  font: inherit;
+  cursor: pointer;
+}
+.uphone-switch {
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--uphone-accent);
+}
+label.uphone-row {
+  align-items: center;
+  cursor: pointer;
+}
+.uphone-ext-body {
+  flex: 1;
+  min-height: 0;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+/* ── conversation looks ── */
+
+.uphone-convo.is-sms .uphone-bubble-row.is-user .uphone-bubble {
+  background: #2563eb;
+  color: #fff;
+}
+.uphone-convo.is-talk {
+  background: #14232a;
+}
+.uphone-convo.is-talk .uphone-bubble-row.is-user .uphone-bubble {
+  background: #2dd4bf;
+  color: #062925;
+}
+.uphone-convo.is-talk .uphone-bubble-row.is-assistant .uphone-bubble {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.uphone-convo.is-talk .uphone-send {
+  background: #2dd4bf;
+  color: #062925;
+}
+
+/* ── calls ── */
+
+.uphone-call,
+.uphone-convo.is-call {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background: linear-gradient(180deg, #1f2a37, #0b0f14 70%);
+}
+.uphone-call-top {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 16px 14px;
+}
+.uphone-call.is-ringing .uphone-call-top {
+  padding-top: 70px;
+}
+.uphone-call-name {
+  font-size: 22px;
+  font-weight: 600;
+}
+.uphone-call-status {
+  color: var(--uphone-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.uphone-call-actions {
+  display: flex;
+  flex: none;
+  justify-content: space-around;
+  padding: 14px 30px 18px;
+}
+.uphone-call.is-ringing .uphone-call-actions {
+  margin-top: auto;
+  padding-bottom: 40px;
+}
+.uphone-call-btn {
+  width: 60px;
+  height: 60px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+.uphone-call-btn.is-accept {
+  background: #22c55e;
+  animation: uphone-ring 1.2s ease-in-out infinite;
+}
+.uphone-call-btn.is-decline {
+  background: #ef4444;
+}
+@keyframes uphone-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(34, 197, 94, 0);
+  }
+}
+/* a ringing phone shakes now and then, and so does the launcher when the phone is closed */
+.uphone-root[data-ringing="true"] .uphone-frame,
+.uphone-root[data-ringing="true"] .uphone-launcher {
+  animation: uphone-buzz 0.12s linear 7, uphone-ring-again 2.4s 1s infinite;
+}
+@keyframes uphone-ring-again {
+  0%,
+  80%,
+  100% {
+    margin-right: 0;
+  }
+  84%,
+  92% {
+    margin-right: 4px;
+  }
+  88%,
+  96% {
+    margin-right: -4px;
+  }
+}
+.uphone-convo.is-call .uphone-bubble-row.is-assistant .uphone-bubble {
+  background: rgba(255, 255, 255, 0.1);
+}
+.uphone-convo.is-call .uphone-bubble-row.is-user .uphone-bubble {
+  background: rgba(34, 197, 94, 0.85);
+  color: #04210f;
+}
+
+/* ── camera and gallery ── */
+
+.uphone-camera {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background: #000;
+}
+.uphone-viewfinder {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 10px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: radial-gradient(circle at 40% 35%, #3a3f4b, #0d0f13 75%);
+}
+.uphone-grid-lines {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 33%, rgba(255, 255, 255, 0.15) 33%, rgba(255, 255, 255, 0.15) calc(33% + 1px), transparent calc(33% + 1px), transparent 66%, rgba(255, 255, 255, 0.15) 66%, rgba(255, 255, 255, 0.15) calc(66% + 1px), transparent calc(66% + 1px)),
+    linear-gradient(transparent 33%, rgba(255, 255, 255, 0.15) 33%, rgba(255, 255, 255, 0.15) calc(33% + 1px), transparent calc(33% + 1px), transparent 66%, rgba(255, 255, 255, 0.15) 66%, rgba(255, 255, 255, 0.15) calc(66% + 1px), transparent calc(66% + 1px));
+}
+.uphone-rec {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 700;
+  animation: uphone-blink 1.4s steps(2) infinite;
+}
+@keyframes uphone-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.uphone-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.uphone-flash.is-on {
+  animation: uphone-flash 0.45s ease-out;
+}
+@keyframes uphone-flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.uphone-camera-input {
+  margin: 10px 10px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+}
+.uphone-camera-bar {
+  display: grid;
+  flex: none;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 14px 24px 8px;
+}
+.uphone-shutter {
+  width: 64px;
+  height: 64px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 3px #000;
+  cursor: pointer;
+}
+.uphone-camera-thumb {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  background: #222;
+  cursor: pointer;
+}
+.uphone-camera-thumb span {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.uphone-gallery {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: max-content;
+  gap: 3px;
+  min-height: 0;
+  padding: 3px;
+  overflow-y: auto;
+}
+.uphone-tile {
+  display: flex;
+  align-items: flex-end;
+  aspect-ratio: 1;
+  padding: 6px;
+  overflow: hidden;
+  border: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font: inherit;
+  font-size: 9px;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+.uphone-tile span {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.uphone-photo-full {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  min-height: 0;
+  margin: 10px;
+  padding: 18px;
+  border-radius: 14px;
+}
+.uphone-photo-full p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+.uphone-photo-meta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px 10px;
+  color: var(--uphone-muted);
+  font-size: 11px;
 }
 
 /* ── stages: the phone slowly stops being yours ── */

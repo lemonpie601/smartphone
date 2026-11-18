@@ -3,11 +3,22 @@
   "version": 1,
   "config": {
     "name": "User Phone",
-    "version": "0.4.0",
-    "description": "{{user}}의 스마트폰. 새로 오픈한 AI 컴패니언 서비스 '루미'에서 캐릭터와 대화하다 보면, 그 캐릭터가 점점 폰을 장악해 간다.",
+    "version": "0.5.0",
+    "description": "{{user}}의 스마트폰. 전화, 문자, 톡, 카메라, 갤러리, 그리고 새로 오픈한 AI 컴패니언 서비스 '루미'. 루미의 캐릭터는 점점 폰을 장악해 간다.",
     "runtime": "client",
     "capabilities": ["full_page_access"],
-    "jsPath": "extension.js",
+    "jsPath": [
+      "src/core.js",
+      "src/prompts.js",
+      "src/shell.js",
+      "src/apps/lumi.js",
+      "src/apps/phone.js",
+      "src/apps/messages.js",
+      "src/apps/camera.js",
+      "src/apps/memo.js",
+      "src/apps/settings.js",
+      "src/main.js"
+    ],
     "cssPath": "extension.css"
   }
 }
