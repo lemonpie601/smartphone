@@ -39,6 +39,7 @@ function toggle(force) {
     void refreshContext(true);
     render();
   } else {
+    lockSound();
     closeShade();
     leaveExternalApp();
     logActivity("폰을 내려놓았다");
@@ -349,6 +350,7 @@ function renderLock() {
   const p = partner();
   const unlock = (then) => {
     logActivity("폰 잠금을 해제했다");
+    lockSound(true);
     if (then) then.open();
     else go("home");
   };
@@ -537,6 +539,7 @@ function conversationView({ key, header, thread, emptyText, onSend, variant, pla
     const text = input.value.trim();
     if (!text || ui.busyKey) return;
     input.value = "";
+    if (variant !== "call") sentSound();
     void onSend(text);
   };
   input.addEventListener("keydown", (event) => {

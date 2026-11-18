@@ -131,6 +131,8 @@ async function askModel({ key, system, thread, speaker, cue, unread = false }) {
     });
     const lines = cleanReply(applyAffection(result.content), speaker);
     for (const text of lines) thread.push({ role: "assistant", text, t: Date.now(), ...(unread ? { unread: true } : {}) });
+    // A reply landing in the conversation on screen gets a soft sound; elsewhere a notification speaks for it.
+    if (lines.length > 0 && key !== "call" && ui.open && convo?.key === key && convo.list.isConnected) receivedSound();
     trimList(thread, MAX_THREAD);
     save();
     return lines;

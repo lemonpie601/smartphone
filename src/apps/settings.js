@@ -22,8 +22,10 @@ function renderSettings() {
 function renderSettingsHome() {
   const name = userName();
   const stage = stageIndex();
-  const body = h("div", { class: "uphone-settings" });
-  body.append(
+  // h() skips null children; Element.append() would print them as the text "null".
+  const body = h(
+    "div",
+    { class: "uphone-settings" },
     h("div", { class: "uphone-profile" }, h("div", { class: "uphone-avatar" }, name.charAt(0)), h("strong", null, name)),
     h(
       "div",
@@ -45,6 +47,10 @@ function renderSettingsHome() {
         data.settings.sound = on;
         save();
         if (on) chime();
+      }),
+      toggleRow("터치음", data.settings.touchSound !== false, (on) => {
+        data.settings.touchSound = on;
+        save();
       }),
     ),
     h(

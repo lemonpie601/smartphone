@@ -53,6 +53,7 @@ function renderCamera() {
     save();
     logActivity(selfie ? `셀카를 찍었다: "${snippet(desc)}"` : `사진을 찍었다: "${snippet(desc)}"`);
     input.value = "";
+    shutterSound();
     flash.classList.remove("is-on");
     void flash.offsetWidth; // restart the animation
     flash.classList.add("is-on");

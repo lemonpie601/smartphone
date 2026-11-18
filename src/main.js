@@ -139,6 +139,6 @@ return () => {
   if (window.fetch === guardedFetch) window.fetch = pageFetch;
   if (window.UserPhone === userPhoneApi) delete window.UserPhone;
   leaveExternalApp();
-  stopEasterEggs();
+  stopSounds();
   root.remove();
 };

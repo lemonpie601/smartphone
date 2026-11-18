@@ -425,6 +425,8 @@ function receiveCall(contactId, hidden = false) {
   if (!ui.open) toggle(true);
   buzz();
   render();
+  // A hidden number rings in its own wrong key.
+  call.stopRingtone = startRingtone({ eerie: hidden });
   call.ringTimer = marinara.setTimeout(() => {
     if (ui.call !== call || call.state !== "ringing") return;
     finishCall("missed");
@@ -435,6 +437,7 @@ function answerCall() {
   const call = ui.call;
   if (!call || call.state !== "ringing") return;
   marinara.clearTimeout(call.ringTimer);
+  call.stopRingtone?.();
   call.state = "active";
   call.started = Date.now();
   render();
@@ -465,6 +468,7 @@ function finishCall(outcome) {
   if (!call) return;
   marinara.clearTimeout(call.ringTimer);
   call.stopRingback?.();
+  call.stopRingtone?.();
   if (call.state !== "ringing") hangupSound(); // hanging up, or giving up while it still rings out
   const cs = chatState();
   const name = call.hidden ? "발신자 정보 없는 번호" : callerName(call);

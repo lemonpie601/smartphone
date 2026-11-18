@@ -57,6 +57,7 @@ function formatCountdown(ms) {
 // ── the ticker: alarms, the timer, and live numbers on screen ──
 
 let lastAlarmMinute = "";
+let alarmTone = null; // stops the ringing alarm's sound
 marinara.setInterval(() => {
   if (!ctx.chatId) return;
   const minute = hhmm();
@@ -73,11 +74,17 @@ marinara.setInterval(() => {
       break;
     }
   }
+  // The alarm sound stops once its ringing screen is gone (dismissed, snoozed, or left).
+  if (alarmTone && !(ui.open && ui.app === "clock" && String(ui.sub ?? "").startsWith("ringing:"))) {
+    alarmTone();
+    alarmTone = null;
+  }
   if (countdown.running && Date.now() >= countdown.endAt) {
     countdown.running = false;
     countdown.left = 0;
     logActivity(`${formatCountdown(countdown.total)} 타이머가 끝났다`);
     buzz();
+    timerDoneSound();
     showToast("⏱ 타이머가 끝났어요.");
     if (ui.app === "clock") render();
   }
@@ -105,6 +112,8 @@ function ringAlarm(a) {
   ui.sub = `ringing:${a.id}`;
   render();
   buzz();
+  alarmTone?.();
+  alarmTone = startAlarmTone();
 }
 
 // ── screens ──
