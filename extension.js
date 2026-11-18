@@ -77,13 +77,19 @@ function save() {
   if (saveTimer) marinara.clearTimeout(saveTimer);
   saveTimer = marinara.setTimeout(() => {
     saveTimer = null;
-    // ponytail: whole-object writes; fine under the 1 MB storage cap. Upgrade path: per-chat keys.
-    // dataVersion lets a later release convert older saved data before reading it.
-    marinara.storage.patch({ dataVersion: 1, chats: data.chats, settings: data.settings }).catch((error) => {
-      marinara.log.error("save failed", error);
-    });
+    saveNow().catch((error) => marinara.log.error("save failed", error));
   }, 400);
 }
+
+function saveNow() {
+  if (saveTimer) marinara.clearTimeout(saveTimer);
+  saveTimer = null;
+  // ponytail: whole-object writes; fine under the 1 MB storage cap. Upgrade path: per-chat keys.
+  // dataVersion lets a later release convert older saved data before reading it.
+  return marinara.storage.patch({ dataVersion: 1, chats: data.chats, settings: data.settings });
+}
+
+const sleep = (ms) => new Promise((resolve) => marinara.setTimeout(resolve, ms));
 
 function logActivity(text) {
   if (!ctx.chatId) return;
@@ -127,6 +133,7 @@ function cardFields(record) {
     scenario: d.scenario || "",
     appearance: ext.appearance || d.appearance || "",
     avatar: typeof record.avatarPath === "string" ? record.avatarPath : null,
+    userPhone: isObject(ext.userPhone) ? ext.userPhone : null,
   };
 }
 
@@ -194,6 +201,59 @@ function connectionId() {
   return data.settings.connectionId || ctx.chat?.connectionId || null;
 }
 
+// ── story gate ─────────────────────────────────────────
+// A card can hide its real intro until 앵챗 has been played, via data.extensions.userPhone:
+//   { storyGate: true, promo: "...", unlockAfter: 3, intro: "..." }
+
+function storyGate() {
+  const p = partner();
+  const cfg = p?.userPhone;
+  if (!cfg?.storyGate || typeof cfg.intro !== "string" || !cfg.intro.trim()) return null;
+  return {
+    promo: typeof cfg.promo === "string" && cfg.promo.trim() ? cfg.promo : `${p.name}이(가) 당신을 기다리고 있어요.`,
+    unlockAfter: Math.max(1, Math.floor(Number(cfg.unlockAfter)) || 3),
+    intro: cfg.intro,
+  };
+}
+
+function gateLocked() {
+  return !!storyGate() && !chatState().storyUnlocked;
+}
+
+let unlocking = false;
+async function unlockStory() {
+  const gate = storyGate();
+  const p = partner();
+  const chatId = ctx.chatId;
+  if (!gate || !p || !chatId || unlocking || chatState().storyUnlocked) return;
+  unlocking = true;
+  const cs = chatState();
+  try {
+    await sleep(1800); // let the last 앵챗 reply land first
+    root.dataset.glitch = "on";
+    // Never post the intro twice, even if this extension's storage was wiped.
+    const recent = await api(`/api/chats/${encodeURIComponent(chatId)}/messages?limit=50`).catch(() => []);
+    const list = Array.isArray(recent) ? recent : Array.isArray(recent?.messages) ? recent.messages : [];
+    if (!list.some((m) => m?.content === gate.intro)) {
+      await api(`/api/chats/${encodeURIComponent(chatId)}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ role: "assistant", characterId: p.id, content: gate.intro }),
+      });
+    }
+    cs.storyUnlocked = true;
+    await saveNow();
+    await sleep(2200);
+    root.dataset.glitch = "off";
+    await sleep(900);
+    // Marinara does not refetch messages added from outside, so the reload is the reveal.
+    window.location.reload();
+  } catch (error) {
+    root.dataset.glitch = "";
+    unlocking = false;
+    showToast(`도입부를 열지 못했어요: ${error instanceof Error ? error.message : error}`);
+  }
+}
+
 // ── 앵챗 generation ────────────────────────────────────
 
 function buildSystemPrompt(p, cs) {
@@ -247,7 +307,6 @@ function escapeRegExp(text) {
 
 async function sendAngchat(text) {
   const p = partner();
-  const conn = connectionId();
   if (!p || ui.busy) return;
   const cs = chatState();
   const thread = (cs.threads[p.id] ??= []);
@@ -255,10 +314,29 @@ async function sendAngchat(text) {
   cs.infection = Math.min(100, cs.infection + (data.settings.autoInfect === false ? 0 : INFECTION_PER_MESSAGE));
   trimThread(thread);
   save();
-  renderAngchatMessages();
+  const replied = await generateReply(p);
+  const gate = storyGate();
+  const sent = thread.filter((m) => m.role === "user").length;
+  if (replied && gate && !cs.storyUnlocked && sent >= gate.unlockAfter) void unlockStory();
+}
+
+/** The partner's first message, sent when the story gate's 앵챗 onboarding is accepted. */
+function requestOpening() {
+  const p = partner();
+  if (!p || ui.busy) return;
+  const userName = ctx.persona?.name || "the user";
+  return generateReply(p, `(${userName} just opened 앵챗 for the first time. Send your first messages to greet them.)`);
+}
+
+/** Asks the model for the partner's next messages. `cue` is a one-off user turn that is not saved. */
+async function generateReply(p, cue) {
+  const conn = connectionId();
+  const cs = chatState();
+  const thread = (cs.threads[p.id] ??= []);
   if (!conn) {
     showToast("이 채팅에 연결된 모델이 없어요. 설정 앱에서 연결을 골라 주세요.");
-    return;
+    renderAngchatMessages();
+    return false;
   }
   ui.busy = true;
   renderAngchatMessages();
@@ -267,6 +345,9 @@ async function sendAngchat(text) {
       { role: "system", content: buildSystemPrompt(p, cs) },
       ...thread.slice(-PROMPT_HISTORY).map((m) => ({ role: m.role, content: m.text })),
     ];
+    // Some providers reject a history that opens with the assistant (e.g. after the onboarding greeting).
+    if (messages[1]?.role === "assistant") messages.splice(1, 0, { role: "user", content: "(opens 앵챗)" });
+    if (cue) messages.push({ role: "user", content: cue });
     const result = await api("/api/generate/raw", {
       method: "POST",
       body: JSON.stringify({ connectionId: conn, messages, streaming: false }),
@@ -275,8 +356,10 @@ async function sendAngchat(text) {
     for (const bubble of bubbles) thread.push({ role: "assistant", text: bubble, t: Date.now() });
     trimThread(thread);
     save();
+    return bubbles.length > 0;
   } catch (error) {
     showToast(`앵챗 전송 실패: ${error instanceof Error ? error.message : error}`);
+    return false;
   } finally {
     ui.busy = false;
     renderAngchatMessages();
@@ -389,6 +472,7 @@ function renderStatus() {
 
 function applyStage() {
   root.dataset.stage = String(stageIndex(chatState().infection) + 1);
+  root.dataset.gate = gateLocked() ? "locked" : "open";
   renderStatus();
 }
 
@@ -425,7 +509,14 @@ function renderLock() {
           avatar(p, "small"),
           h("div", null, h("strong", null, `앵챗 · ${p.name}`), h("p", null, last.text)),
         )
-      : null,
+      : gateLocked()
+        ? h(
+            "div",
+            { class: "uphone-notif is-promo" },
+            h("span", { class: "uphone-icon is-angchat is-mini" }, "💬"),
+            h("div", null, h("strong", null, "앵챗 · 광고"), h("p", null, storyGate().promo)),
+          )
+        : null,
     h("div", { class: "uphone-lock-hint" }, "눌러서 열기"),
   );
 }
@@ -463,6 +554,11 @@ function renderAngchat() {
   if (!ctx.chatId) return emptyApp("앵챗", "Marinara에서 채팅을 먼저 열어 주세요.");
   if (ctx.error) return emptyApp("앵챗", `채팅 정보를 못 불러왔어요: ${ctx.error}`);
   if (!p) return emptyApp("앵챗", ctx.chat ? "이 채팅에는 캐릭터가 없어요." : "불러오는 중…");
+  const cs = chatState();
+  const gate = storyGate();
+  if (gate && !cs.storyUnlocked && !cs.onboarded && !(cs.threads[p.id]?.length > 0)) {
+    return renderOnboarding(p, gate, cs);
+  }
   angchatList = h("div", { class: "uphone-messages" });
   const input = h("textarea", { class: "uphone-input", rows: "1", placeholder: "메시지 보내기", "aria-label": "메시지" });
   const submit = () => {
@@ -486,6 +582,34 @@ function renderAngchat() {
   );
   marinara.setTimeout(() => input.focus(), 0);
   return view;
+}
+
+function renderOnboarding(p, gate, cs) {
+  return h(
+    "div",
+    { class: "uphone-onboarding" },
+    h("div", { class: "uphone-onboarding-logo" }, "💬"),
+    h("div", { class: "uphone-onboarding-brand" }, "앵챗"),
+    avatar(p, "large"),
+    h("h2", null, `새로운 AI 친구, ${p.name}`),
+    h("p", null, gate.promo),
+    h(
+      "button",
+      {
+        class: "uphone-cta",
+        type: "button",
+        onclick: () => {
+          cs.onboarded = true;
+          save();
+          logActivity("앵챗에 가입했다");
+          render();
+          void requestOpening();
+        },
+      },
+      "시작하기",
+    ),
+    h("small", null, "시작하면 앵챗이 기기의 모든 권한에 접근하는 데 동의하게 됩니다."),
+  );
 }
 
 function renderAngchatMessages() {
@@ -584,7 +708,10 @@ function renderSettings() {
         type: "button",
         onclick: () => {
           if (!window.confirm("이 채팅의 앵챗 대화, 메모, 활동 기록, 침투도를 모두 지울까요?")) return;
-          delete data.chats[ctx.chatId ?? "__none__"];
+          const id = ctx.chatId ?? "__none__";
+          const unlocked = data.chats[id]?.storyUnlocked;
+          delete data.chats[id];
+          if (unlocked) data.chats[id] = { storyUnlocked: true }; // the intro is already in the chat
           save();
           render();
         },

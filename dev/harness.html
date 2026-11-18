@@ -16,6 +16,13 @@
         padding: 24px;
         max-width: 520px;
       }
+      .msg {
+        padding: 12px;
+        border-radius: 10px;
+        background: #2c2c36;
+        white-space: pre-wrap;
+        line-height: 1.5;
+      }
     </style>
   </head>
   <body>
@@ -27,30 +34,52 @@
       </p>
     </main>
     <script type="module">
-      // Fake Marinara: one chat with one character and a persona.
+      // Fake Marinara: one chat with the example character and persona.
+      // State lives in sessionStorage so the story gate's page reload can be tested; add ?reset to start over.
+      if (new URLSearchParams(location.search).has("reset")) {
+        sessionStorage.clear();
+        history.replaceState(null, "", location.pathname);
+      }
       localStorage.setItem("marinara-active-chat-id", "chat-1");
+      const card = await (await fetch("../examples/이안.json")).json();
+      const persona = await (await fetch("../examples/윤서아.persona.json")).json();
+      const loadSession = (key, fallback) => JSON.parse(sessionStorage.getItem(key) ?? "null") ?? fallback;
+      const chatMessages = loadSession("harness-messages", [
+        { id: "m0", role: "assistant", characterId: "c1", content: card.data.first_mes },
+      ]);
       const db = {
         "/api/chats/chat-1": { id: "chat-1", characterIds: ["c1"], personaId: "p1", connectionId: "conn-1" },
-        "/api/characters/c1": {
-          id: "c1",
-          avatarPath: null,
-          data: JSON.stringify({ name: "이안", description: "다정하지만 집착이 강한 남자.", personality: "다정함, 소유욕" }),
-        },
-        "/api/characters/personas/p1": { id: "p1", name: "레몬", description: "대학생." },
+        "/api/characters/c1": { id: "c1", avatarPath: null, data: JSON.stringify(card.data) },
+        "/api/characters/personas/p1": { id: "p1", ...persona },
         "/api/connections": [{ id: "conn-1", name: "Test model" }],
       };
       const replies = ["안녕! 나는 앵챗의 이안이야 :)", "오늘 하루는 어땠어?\n나한테 다 말해줘"];
       window.__requests = [];
       const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-      const memory = {};
+      const memory = loadSession("harness-storage", {});
+      const persist = () => {
+        sessionStorage.setItem("harness-storage", JSON.stringify(memory));
+        sessionStorage.setItem("harness-messages", JSON.stringify(chatMessages));
+      };
+      // Stand-in for Marinara's chat view, so the revealed intro is visible.
+      const chatView = document.createElement("section");
+      chatView.id = "main-chat";
+      chatView.innerHTML = "<h2>메인 채팅</h2>";
+      for (const m of chatMessages) {
+        const p = document.createElement("p");
+        p.className = "msg";
+        p.textContent = m.content;
+        chatView.append(p);
+      }
+      document.querySelector("main").append(chatView);
       const marinara = Object.freeze({
         version: 1,
         extension: { id: "harness", name: "User Phone", contentHash: "sha256:harness" },
         log: console,
         storage: {
           get: async () => structuredClone(memory),
-          patch: async (value) => Object.assign(memory, structuredClone(value)),
-          clear: async () => Object.keys(memory).forEach((k) => delete memory[k]),
+          patch: async (value) => (Object.assign(memory, structuredClone(value)), persist(), structuredClone(memory)),
+          clear: async () => (Object.keys(memory).forEach((k) => delete memory[k]), persist()),
         },
         async fetch(input, init = {}) {
           const path = String(input);
@@ -58,6 +87,13 @@
           if (path === "/api/generate/raw") {
             await new Promise((r) => setTimeout(r, 700));
             return json({ content: replies[(window.__requests.filter((r) => r.path === path).length - 1) % replies.length] });
+          }
+          if (path.startsWith("/api/chats/chat-1/messages")) {
+            if ((init.method ?? "GET") === "GET") return json(chatMessages);
+            const message = { id: `m${chatMessages.length}`, ...JSON.parse(init.body) };
+            chatMessages.push(message);
+            persist();
+            return json(message);
           }
           return path in db ? json(db[path]) : json({ error: "Not found" }, 404);
         },

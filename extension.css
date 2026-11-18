@@ -405,6 +405,117 @@
   cursor: pointer;
 }
 
+/* ── story gate ── */
+
+/* the launcher keeps calling until 앵챗 has been played */
+.uphone-root[data-gate="locked"] .uphone-launcher {
+  animation: uphone-call 1.6s ease-in-out infinite;
+}
+@keyframes uphone-call {
+  0%,
+  100% {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(255, 122, 168, 0.7);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 0 10px rgba(255, 122, 168, 0);
+  }
+}
+
+.uphone-notif.is-promo {
+  border: 1px solid rgba(255, 122, 168, 0.45);
+}
+.uphone-icon.is-mini {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.uphone-avatar.large {
+  width: 88px;
+  height: 88px;
+  font-size: 34px;
+}
+
+.uphone-onboarding {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 24px 24px;
+  background: linear-gradient(180deg, #2b1726, var(--uphone-bg) 70%);
+  text-align: center;
+}
+.uphone-onboarding-logo {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ff7aa8, #a66bff);
+  font-size: 28px;
+}
+.uphone-onboarding-brand {
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.uphone-onboarding h2 {
+  margin: 8px 0 0;
+  font-size: 19px;
+}
+.uphone-onboarding p {
+  margin: 0;
+  color: var(--uphone-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.uphone-cta {
+  width: 100%;
+  margin-top: auto;
+  padding: 13px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--uphone-accent);
+  color: var(--uphone-user-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.uphone-onboarding small {
+  color: var(--uphone-muted);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* the reveal: the phone glitches, then goes dark before the page reloads */
+.uphone-root[data-glitch="on"] .uphone-screen {
+  animation: uphone-breakdown 0.35s steps(2) infinite !important;
+}
+.uphone-root[data-glitch="off"] .uphone-screen,
+.uphone-root[data-glitch="off"] .uphone-status {
+  visibility: hidden;
+}
+.uphone-root[data-glitch="off"] .uphone-frame {
+  background: #000;
+}
+@keyframes uphone-breakdown {
+  0% {
+    filter: contrast(2) hue-rotate(90deg);
+    transform: translate(2px, -1px) skewX(-4deg);
+  }
+  50% {
+    filter: invert(1) saturate(3);
+    transform: translate(-3px, 1px) skewX(5deg);
+  }
+  100% {
+    filter: brightness(0.4);
+    transform: none;
+  }
+}
+
 /* memo */
 .uphone-memo {
   flex: 1;
@@ -532,7 +643,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .uphone-root .uphone-screen,
+  .uphone-root[data-glitch="on"] .uphone-screen,
   .uphone-root .uphone-frame,
+  .uphone-root .uphone-launcher,
   .uphone-bubble.is-typing i {
     animation: none !important;
   }
