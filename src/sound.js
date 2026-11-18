@@ -157,11 +157,14 @@ function touchSoundsOn() {
   return data.settings.touchSound !== false;
 }
 
-/** A soft tick for a button press. */
+/**
+ * A soft, clean "tok" for a button press: a short sine that drops in pitch. (A noise burst here sounded
+ * like static, so taps use a pure tone.)
+ */
 function tapSound() {
   const ac = touchSoundsOn() && audioContext();
   if (!ac) return;
-  burst(ac, { at: ac.currentTime + 0.005, decay: 0.03, peak: 0.05, filter: "highpass", freq: 3200 });
+  note(ac, { freq: 1100, glide: 700, at: ac.currentTime + 0.005, decay: 0.045, peak: 0.03 });
 }
 
 /** The two-tone sound of a phone keypad key. */
@@ -224,13 +227,14 @@ function chime() {
   tone.stop(at + 0.4);
 }
 
-/** The click of the screen locking or unlocking. */
+/** Two quick notes as the screen unlocks (rising) or locks (falling). Pure tones, no noise. */
 function lockSound(unlock = false) {
   const ac = audioContext();
   if (!ac) return;
   const at = ac.currentTime + 0.01;
-  burst(ac, { at, decay: 0.03, peak: 0.12, filter: "lowpass", freq: unlock ? 2400 : 1400 });
-  note(ac, { freq: unlock ? 900 : 500, glide: unlock ? 1400 : 320, at, decay: 0.06, peak: 0.04 });
+  const [first, second] = unlock ? [880, 1320] : [660, 440];
+  note(ac, { freq: first, at, decay: 0.07, peak: 0.04 });
+  note(ac, { freq: second, at: at + 0.06, decay: 0.09, peak: 0.04 });
 }
 
 /** An alarm clock: four quick beeps, then a pause, until stopped. */
