@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>User Phone harness</title>
-    <link rel="stylesheet" href="../extension/extension.css" />
     <style>
       body {
         margin: 0;
@@ -70,7 +69,14 @@
         estimateTextTokens: (text) => Math.ceil(text.length / 4),
       });
       window.__memory = memory;
-      const source = await (await fetch("../extension/extension.js")).text();
+      // Load the package the way Marinara does: files from manifest.json, joined in order.
+      const { config } = await (await fetch("../manifest.json")).json();
+      const list = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+      const read = async (paths) => (await Promise.all(list(paths).map(async (p) => (await fetch(`../${p}`)).text()))).join("\n\n");
+      const style = document.createElement("style");
+      style.textContent = await read(config.cssPath);
+      document.head.append(style);
+      const source = await read(config.jsPath);
       const AsyncFunction = (async () => {}).constructor;
       window.__cleanup = await new AsyncFunction("marinara", `"use strict";\n${source}`)(marinara);
     </script>

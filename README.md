@@ -14,11 +14,11 @@
 
 1. Marinara의 `.env`에 `ENABLE_EXTERNAL_EXTENSIONS=true`를 넣고 Marinara를 다시 시작해요.
 2. **Settings → Advanced → Danger Zone**에서 **Allow third-party extension imports**를 켜요.
-3. **Settings → Addons → External Extensions**에서 **Import Extension Folder**를 누르고 이 레포의 `extension` 폴더를 골라요.
+3. **Settings → Addons → External Extensions**에서 이 GitHub 레포를 연결하거나, 레포를 내려받아 **Import Extension Folder**로 레포 폴더 전체를 골라요.
 4. 가져온 확장을 열어 코드를 확인하고 **Review and Run**으로 승인해요.
 5. 화면 오른쪽 가장자리에 생긴 📱 버튼을 누르면 폰이 열려요.
 
-업데이트할 때는 같은 폴더를 다시 가져오고 다시 승인하면 돼요. 코드가 바뀌면 Marinara가 확장을 끄고 새 승인을 요구해요.
+업데이트는 `main` 브랜치 기준이에요. 코드가 바뀌면 Marinara가 확장을 끄고 새 승인을 요구해요.
 
 ## 쓰는 법
 
@@ -31,7 +31,14 @@
 
 | 파일 | 내용 |
 | --- | --- |
-| `extension/manifest.json` | 확장 정보와 권한 |
-| `extension/extension.js` | 폰 화면, 앱, 앵챗 생성 |
-| `extension/extension.css` | 폰 디자인과 단계별 연출 |
+| `manifest.json` | 확장 정보와 권한 |
+| `extension.js` | 폰 화면, 앱, 앵챗 생성 |
+| `extension.css` | 폰 디자인과 단계별 연출 |
 | `dev/harness.html` | Marinara 없이 폰 화면을 띄워 보는 테스트 페이지 |
+
+## 개발 메모
+
+- Marinara는 `manifest.json`의 `jsPath`에 적힌 파일을 순서대로 이어 붙여 한 덩어리로 실행해요. 코드가 커지면 `"jsPath": ["src/core.js", "src/angchat.js", ...]`처럼 나누면 되고, 모든 파일이 같은 범위를 공유해요. 정리 함수를 돌려주는 `return`은 마지막 파일에만 둬요.
+- `config.name`(`User Phone`)과 `runtime`(`client`)은 바꾸면 안 돼요. 바뀌면 기존 설치본이 업데이트를 못 받아요.
+- 배포할 때마다 `config.version`을 올려요. 위쪽의 `"version": 1`은 패키지 형식 번호라 그대로 둬요.
+- 저장 데이터 형식을 바꾸면 이전 데이터를 변환하는 코드를 확장 안에 넣어요.

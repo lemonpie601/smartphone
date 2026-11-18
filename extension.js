@@ -78,7 +78,8 @@ function save() {
   saveTimer = marinara.setTimeout(() => {
     saveTimer = null;
     // ponytail: whole-object writes; fine under the 1 MB storage cap. Upgrade path: per-chat keys.
-    marinara.storage.patch({ chats: data.chats, settings: data.settings }).catch((error) => {
+    // dataVersion lets a later release convert older saved data before reading it.
+    marinara.storage.patch({ dataVersion: 1, chats: data.chats, settings: data.settings }).catch((error) => {
       marinara.log.error("save failed", error);
     });
   }, 400);
