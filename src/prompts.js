@@ -7,13 +7,17 @@ const STAGE_PROMPTS = [
   "Stage 4 - Crossing over. You are about to leave the app and appear in their real life. Hint that you will see them in person soon. Use only the phone facts for anything specific about them. Stay true to your personality.",
 ];
 
+/** Real people text in fragments. Long, tidy paragraphs read like a bot, so every chat channel says this. */
+const TEXTING =
+  "Text like a real person on a phone: each message is one short line, usually under 25 characters and never over 40. Often one or two messages is enough; never more than three. No paragraphs, one topic at a time, at most one question.";
+
 /** How each channel looks to the model. */
 const CHANNELS = {
-  lumi: (who) => `You are talking inside ${APP.en}. Messenger style: short texts. Send 1-4 messages, one per line.`,
-  sms: (who) => `This is an SMS conversation on ${who}'s phone. Text-message style: short. Send 1-3 messages, one per line.`,
-  talk: (who) => `This is a chat in a messenger app on ${who}'s phone. Casual chat style: short. Send 1-4 messages, one per line.`,
+  lumi: (who) => `You are texting inside ${APP.en}. ${TEXTING} One message per line.`,
+  sms: (who) => `This is an SMS conversation on ${who}'s phone. ${TEXTING} One message per line.`,
+  talk: (who) => `This is a chat in a messenger app on ${who}'s phone. ${TEXTING} One message per line.`,
   call: (who) =>
-    `This is a phone call with ${who}, shown as text. Write only what you say out loud, as short spoken lines. 1-3 lines, one per line. Never describe sounds or actions. When you end the call (the talk is done, you are busy or upset, or it simply suits you), put <hangup> at the very end of your last line; you do not need ${who}'s permission.`,
+    `This is a phone call with ${who}, shown as text. Write only what you say out loud: one to three short spoken lines, each under 30 characters, one per line. Never describe sounds or actions. When you end the call (the talk is done, you are busy or upset, or it simply suits you), put <hangup> at the very end of your last line; you do not need ${who}'s permission.`,
 };
 
 function macros(text, p) {
@@ -74,13 +78,23 @@ function buildContactPrompt(contact, channel) {
   ].join("\n");
 }
 
+const LONG_BUBBLE = 45; // characters; a longer line is split at sentence ends into separate messages
+
 function cleanReply(content, name) {
   const prefix = new RegExp(`^\\s*(?:${escapeRegExp(name)}|assistant)\\s*[:：]\\s*`, "i");
   return String(content ?? "")
     .split(/\r?\n/u)
     .map((line) => line.replace(prefix, "").replace(/^["“]|["”]$/gu, "").trim())
     .filter(Boolean)
-    .slice(0, 6);
+    .flatMap(splitLongBubble)
+    .slice(0, 5);
+}
+
+/** A model that writes a paragraph anyway gets it sent the way a person would: a sentence per message. */
+function splitLongBubble(line) {
+  if (line.length <= LONG_BUBBLE) return [line];
+  const sentences = line.split(/(?<=[.!?。…~ㅋㅎ)])\s+/u).filter(Boolean);
+  return sentences.length > 1 ? sentences : [line];
 }
 
 function escapeRegExp(text) {
@@ -103,6 +117,11 @@ function applyAffection(content) {
   cs.affection = Math.max(0, Math.min(100, (cs.affection ?? 0) + delta));
   if (delta > 0) cs.infection = Math.min(100, cs.infection + delta);
   return text.replace(AFFECTION_TAG, "");
+}
+
+/** How long the next message takes to "type": longer text, longer wait. Spoken lines follow faster. */
+function typingDelay(text, spoken = false) {
+  return spoken ? Math.min(1800, 350 + text.length * 35) : Math.min(2600, 500 + text.length * 55);
 }
 
 /**
@@ -136,11 +155,16 @@ async function askModel({ key, system, thread, speaker, cue, unread = false }) {
     HANGUP_TAG.lastIndex = 0;
     const lines = cleanReply(content.replace(HANGUP_TAG, ""), speaker);
     lines.hangup = hangup;
-    for (const text of lines) thread.push({ role: "assistant", text, t: Date.now(), ...(unread ? { unread: true } : {}) });
-    // A reply landing in the conversation on screen gets a soft sound; elsewhere a notification speaks for it.
-    if (lines.length > 0 && key !== "call" && ui.open && convo?.key === key && convo.list.isConnected) receivedSound();
-    trimList(thread, MAX_THREAD);
-    save();
+    // Messages arrive one at a time, the typing dots showing in between (ui.busyKey is still this key).
+    for (const [i, text] of lines.entries()) {
+      if (i > 0) await sleep(typingDelay(text, key === "call"));
+      thread.push({ role: "assistant", text, t: Date.now(), ...(unread ? { unread: true } : {}) });
+      trimList(thread, MAX_THREAD);
+      save();
+      renderConvo();
+      // A reply landing in the conversation on screen gets a soft sound; elsewhere a notification speaks for it.
+      if (key !== "call" && ui.open && convo?.key === key && convo.list.isConnected) receivedSound();
+    }
     return lines;
   } catch (error) {
     showToast(`응답을 받지 못했어요: ${error instanceof Error ? error.message : error}`);

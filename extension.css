@@ -580,8 +580,10 @@
 
 /* ── story gate ── */
 
-/* the launcher keeps calling until the AI chat has been played */
-.uphone-root[data-gate="locked"] .uphone-launcher {
+/* the launcher only calls for attention while something is actually going off: an alarm ringing.
+   (Incoming calls shake it, see data-ringing.) It used to pulse for as long as the story gate was locked,
+   which never stopped and got tiring. */
+.uphone-root[data-alert="true"] .uphone-launcher {
   animation: uphone-call 1.6s ease-in-out infinite;
 }
 @keyframes uphone-call {

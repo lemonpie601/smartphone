@@ -116,6 +116,7 @@ function applyStage() {
   root.dataset.stage = String(stageIndex() + 1);
   root.dataset.gate = gateLocked() ? "locked" : "open";
   root.dataset.ringing = ui.call?.state === "ringing" ? "true" : "";
+  root.dataset.alert = ui.app === "clock" && String(ui.sub ?? "").startsWith("ringing:") ? "true" : "";
   renderStatus();
 }
 
