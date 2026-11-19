@@ -225,9 +225,15 @@
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(12px);
 }
-.uphone-notif > div {
+/* only the text column grows; the avatar or app icon keeps its size */
+.uphone-notif > div:not(.uphone-avatar) {
   flex: 1;
   min-width: 0;
+}
+.uphone-notif > .uphone-avatar,
+.uphone-notif > .uphone-icon {
+  flex: none;
+  align-self: flex-start;
 }
 .uphone-notif strong {
   display: flex;

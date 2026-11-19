@@ -12,7 +12,8 @@ const CHANNELS = {
   lumi: (who) => `You are talking inside ${APP.en}. Messenger style: short texts. Send 1-4 messages, one per line.`,
   sms: (who) => `This is an SMS conversation on ${who}'s phone. Text-message style: short. Send 1-3 messages, one per line.`,
   talk: (who) => `This is a chat in a messenger app on ${who}'s phone. Casual chat style: short. Send 1-4 messages, one per line.`,
-  call: (who) => `This is a phone call with ${who}, shown as text. Write only what you say out loud, as short spoken lines. 1-3 lines, one per line. Never describe sounds or actions.`,
+  call: (who) =>
+    `This is a phone call with ${who}, shown as text. Write only what you say out loud, as short spoken lines. 1-3 lines, one per line. Never describe sounds or actions. When you end the call (the talk is done, you are busy or upset, or it simply suits you), put <hangup> at the very end of your last line; you do not need ${who}'s permission.`,
 };
 
 function macros(text, p) {
@@ -87,6 +88,7 @@ function escapeRegExp(text) {
 }
 
 const AFFECTION_TAG = /<\s*affection\s*:\s*([+-]?\d+(?:\.\d+)?)\s*>/giu;
+const HANGUP_TAG = /<\s*\/?\s*hang\s*-?\s*up\s*\/?\s*>/giu; // the other side ends a call
 
 /**
  * Applies and removes the partner's hidden <affection:±N> line. Infection rises by as much as affection
@@ -107,7 +109,7 @@ function applyAffection(content) {
  * Asks the model for `speaker`'s next lines in one conversation and appends them to `thread`.
  * `key` names the conversation, so its screen can show the typing dots. `cue` is a one-off user turn
  * that is not saved, e.g. "they just picked up". `unread` marks the new lines for unread badges.
- * Returns the new lines.
+ * Returns the new lines; `lines.hangup` is true when the speaker ended a call with <hangup>.
  */
 async function askModel({ key, system, thread, speaker, cue, unread = false }) {
   const conn = connectionId();
@@ -129,7 +131,11 @@ async function askModel({ key, system, thread, speaker, cue, unread = false }) {
       method: "POST",
       body: JSON.stringify({ connectionId: conn, messages, streaming: false }),
     });
-    const lines = cleanReply(applyAffection(result.content), speaker);
+    const content = applyAffection(result.content);
+    const hangup = HANGUP_TAG.test(content);
+    HANGUP_TAG.lastIndex = 0;
+    const lines = cleanReply(content.replace(HANGUP_TAG, ""), speaker);
+    lines.hangup = hangup;
     for (const text of lines) thread.push({ role: "assistant", text, t: Date.now(), ...(unread ? { unread: true } : {}) });
     // A reply landing in the conversation on screen gets a soft sound; elsewhere a notification speaks for it.
     if (lines.length > 0 && key !== "call" && ui.open && convo?.key === key && convo.list.isConnected) receivedSound();

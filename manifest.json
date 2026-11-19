@@ -3,7 +3,7 @@
   "version": 1,
   "config": {
     "name": "User Phone",
-    "version": "0.6.3",
+    "version": "0.6.4",
     "description": "{{user}}의 스마트폰. 전화, 문자, 톡, 카메라, 갤러리, 인터넷, 캘린더, 지도, 음악, 날씨, 시계, SNS, 그리고 새로 오픈한 AI 컴패니언 서비스 '루미'. 루미의 캐릭터는 점점 폰을 장악해 간다.",
     "runtime": "client",
     "capabilities": ["full_page_access"],

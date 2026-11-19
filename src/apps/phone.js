@@ -447,23 +447,44 @@ function answerCall() {
   void callerSpeaks(cue);
 }
 
+const CALL_SILENCE_MS = 25_000; // quiet this long after the caller spoke: they check, then hang up
+
 async function callerSpeaks(cue) {
   const call = ui.call;
   const caller = call && callerFor(call);
   if (!caller) return;
-  await askModel({ key: "call", system: promptFor(caller, "call"), thread: call.lines, speaker: caller.name, cue });
+  const lines = await askModel({ key: "call", system: promptFor(caller, "call"), thread: call.lines, speaker: caller.name, cue });
+  if (lines.hangup) hangUpOnUser(call);
+}
+
+/** The other side ends the call: their last words stay on screen a moment, then the line goes dead. */
+function hangUpOnUser(call) {
+  if (ui.call !== call || call.state !== "active" || call.ending) return;
+  call.ending = true;
+  marinara.setTimeout(() => {
+    if (ui.call !== call) return;
+    const el = screen.querySelector(".uphone-call-status");
+    if (el) el.textContent = "통화 종료";
+    marinara.setTimeout(() => {
+      if (ui.call === call) finishCall(undefined, { byCaller: true });
+    }, 900);
+  }, 1600);
 }
 
 async function sayInCall(text) {
   const call = ui.call;
-  if (!call || call.state !== "active") return;
+  if (!call || call.state !== "active" || call.ending) return;
   call.lines.push({ role: "user", text, t: Date.now() });
+  call.nudged = false;
   renderConvo();
   await callerSpeaks();
 }
 
-/** Ends the call on screen and records it. `outcome` is "missed" or "declined" for an unanswered call. */
-function finishCall(outcome) {
+/**
+ * Ends the call on screen and records it. `outcome` is "missed" or "declined" for an unanswered call;
+ * `byCaller` marks a call the other side hung up.
+ */
+function finishCall(outcome, { byCaller = false } = {}) {
   const call = ui.call;
   if (!call) return;
   marinara.clearTimeout(call.ringTimer);
@@ -483,7 +504,9 @@ function finishCall(outcome) {
     logActivity(dir === "in" ? `${name}의 전화를 받아 ${minutes}분 통화했다` : `${name}에게 전화를 걸어 ${minutes}분 통화했다`);
     const said = call.lines.filter((m) => m.role === "user").at(-1);
     if (said) logActivity(`${josa(name, "과", "와")}의 통화에서 이렇게 말했다: "${snippet(said.text)}"`);
+    if (byCaller) logActivity(`${josa(name, "이", "가")} 먼저 전화를 끊었다`);
   }
+  if (byCaller) showToast("상대방이 전화를 끊었어요.");
   ui.call = null;
   if (ui.busyKey === "call") ui.busyKey = null;
   save();
@@ -535,9 +558,16 @@ function renderCall() {
 
 /** Keeps the call timer moving without redrawing the transcript. */
 function tickCallTimer() {
-  if (ui.call?.state !== "active") return;
+  const call = ui.call;
+  if (call?.state !== "active" || call.ending) return;
   const el = screen.querySelector(".uphone-call-status");
-  if (el) el.textContent = formatDuration((Date.now() - ui.call.started) / 1000);
+  if (el) el.textContent = formatDuration((Date.now() - call.started) / 1000);
+  // Silence on the line: the caller checks once ("여보세요?"), and hangs up if it goes on.
+  const last = call.lines.at(-1);
+  if (ui.busyKey || last?.role !== "assistant" || Date.now() - last.t < CALL_SILENCE_MS) return;
+  if (call.nudged) return hangUpOnUser(call);
+  call.nudged = true;
+  void callerSpeaks(`(${userName()} has said nothing for a while. React to the silence, briefly. If you have had enough, end the call.)`);
 }
 
 /** Now and then someone calls. Once the partner has slipped out of its app, sometimes it is the partner. */
